@@ -8,7 +8,7 @@ The application uses [Svelte](https://svelte.dev/) in the frontend, [FastAPI](ht
 🔴 https://backend-flight-booking-app.herokuapp.com/
 
 ## 🛠️ Development
----
+
 Clone repository
 ```
 git clone https://github.com/silas-pohl/flight-booking-app.git
