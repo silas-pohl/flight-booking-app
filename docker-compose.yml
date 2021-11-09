@@ -1,0 +1,21 @@
+services:
+  frontend:
+    build: frontend/
+    ports:
+      - "5000:5000"
+  backend:
+    build: backend/
+    depends_on:
+      - database
+    ports:
+      - "80:80"
+    env_file:
+      - backend/.env
+  database:
+    image: "postgres:latest"
+    ports:
+      - "5432:5432"
+    env_file:
+      - backend/.env
+    volumes:
+      - ./db-data:/var/lib/postgresql/data/

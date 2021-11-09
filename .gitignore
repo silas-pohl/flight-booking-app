@@ -46,6 +46,9 @@ coverage.xml
 # PyBuilder
 target/
 
+# Local DB
+db-data
+
 # Jupyter Notebook
 .ipynb_checkpoints
 
