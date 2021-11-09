@@ -22,11 +22,11 @@ jobs:
           appdir: "backend"
           usedocker: true
         env:
-          HD_POSTGRES_DATABASE=${{secrets.POSTGRES_DATABASE}}
-          HD_POSTGRES_USER=${{secrets.POSTGRES_USER}}
-          HD_POSTGRES_PASSWORD=${{secrets.POSTGRES_PASSWORD}}
-          HD_POSTGRES_HOST=${{secrets.POSTGRES_HOST}}
-          HD_POSTGRES_PORT=${{secrets.POSTGRES_PORT}}
+          HD_POSTGRES_DATABASE: ${{secrets.POSTGRES_DATABASE}}
+          HD_POSTGRES_USER: ${{secrets.POSTGRES_USER}}
+          HD_POSTGRES_PASSWORD: ${{secrets.POSTGRES_PASSWORD}}
+          HD_POSTGRES_HOST: ${{secrets.POSTGRES_HOST}}
+          HD_POSTGRES_PORT: ${{secrets.POSTGRES_PORT}}
 
       - name: Build and deploy frontend
         uses: akhileshns/heroku-deploy@v3.12.12
