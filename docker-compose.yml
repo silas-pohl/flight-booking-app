@@ -1,8 +1,10 @@
 services:
+
   frontend:
     build: frontend/
     ports:
       - "5000:5000"
+
   backend:
     build: backend/
     depends_on:
@@ -11,6 +13,7 @@ services:
       - "80:80"
     env_file:
       - backend/.env
+      
   database:
     image: "postgres:latest"
     ports:

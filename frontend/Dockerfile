@@ -7,9 +7,10 @@ RUN npm install
 
 COPY ./src ./src
 COPY ./public ./public
-RUN npm run build
+COPY svelte.config.js ./
+COPY tsconfig.json ./
 
+RUN npm run build
 EXPOSE 5000
 ENV HOST=0.0.0.0
-
-ENTRYPOINT [ "npm", "start" ]
+CMD npm run check && npm test && npm start
