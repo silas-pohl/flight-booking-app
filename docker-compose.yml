@@ -11,6 +11,8 @@ services:
       - "80:80"
     env_file:
       - backend/.env
+    volumes:
+      - ./backend/:/code/
   database:
     image: "postgres:latest"
     ports:
