@@ -55,7 +55,7 @@ def get_user(db, username: str):
         return schemas.UserInDB(**user_dict)
 
 
-def authenticate_user(email: str, password: str, db: Session = Depends(get_db)):
+def authenticate_user(email: str, password: str, db: Session):
     user = crud.get_user_by_email(db, email)
     if not user:
         return False
