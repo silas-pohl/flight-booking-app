@@ -1,3 +1,4 @@
+from typing import Collection
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
@@ -11,6 +12,7 @@ class User(Base):
     full_name = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     is_active = Column(Boolean, default=True)
+    is_admin = Column(Boolean, default=False)
 
     items = relationship("Item", back_populates="owner")
 
