@@ -36,6 +36,7 @@ class UserBase(BaseModel):
 class User(UserBase):
     id: int
     is_active: bool
+    is_admin: bool
     items: List[Item] = []
 
     class Config:
