@@ -32,11 +32,16 @@ class Item(ItemBase):
 class ItemCreate(ItemBase):
     pass
 
+# Cities
+class City(ItemBase):
+    country: str
 
+    class Config:
+        orm_mode = True
+        
 # Airports
 class Airport(ItemBase):
-    city: str
-    country: str
+    city_id: int
 
     class Config:
         orm_mode = True
@@ -47,7 +52,9 @@ class Flight(ItemBase):
     destination_airport_id: int
     departure_time_utc: datetime
     arrival_time_utc: datetime
-    
+    ticket_price_dollars: float
+    max_tickets: int
+
     class Config:
         orm_mode = True
 
