@@ -37,7 +37,7 @@ class City(Base):
     description = Column(String, index=True)
     country = Column(String, index=True)
 
-    airports = relationship("Airport", back_populates="airports")
+    airports = relationship("Airport", back_populates="city")
 
 
 class Airport(Base):
@@ -46,7 +46,7 @@ class Airport(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, index=True)
     description = Column(String, index=True)
-    city_id = Column(String, index=True) 
+    city_id = Column(Integer, ForeignKey("cities.id")) 
     
     city = relationship("City", back_populates="airports") 
     departing_flights = relationship("Flight", back_populates="airport")
@@ -63,7 +63,7 @@ class Flight(Base):
     arrival_time_utc = Column(TIMESTAMP, index=True)
     departure_airport_id = Column(Integer, ForeignKey("airports.id"))
     destination_airport_id = Column(Integer, ForeignKey("airports.id"))
-    ticket_price_dollars = Column(float, index=True)
+    ticket_price_dollars = Column(FLOAT, index=True)
     max_tickets = Column(Integer, index=True)
 
     departure_airport = relationship("Airport", back_populates="flights")
