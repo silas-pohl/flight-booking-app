@@ -2,6 +2,8 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
+from datetime import datetime, timezone
+
 # JWT
 class Token(BaseModel):
     access_token: str
@@ -13,9 +15,12 @@ class TokenData(BaseModel):
 
 # Items: placeholders for flights 
 class ItemBase(BaseModel):
+    id: int
     title: str
     description: Optional[str] = None
 
+    class Config:
+        orm_mode = True
 
 class Item(ItemBase):
     id: int
@@ -26,6 +31,25 @@ class Item(ItemBase):
 
 class ItemCreate(ItemBase):
     pass
+
+
+# Airports
+class Airport(ItemBase):
+    city: str
+    country: str
+
+    class Config:
+        orm_mode = True
+
+# Flights
+class Flight(ItemBase):
+    departure_airport_id: int
+    destination_airport_id: int
+    departure_time_utc: datetime
+    arrival_time_utc: datetime
+    
+    class Config:
+        orm_mode = True
 
 # Users 
 class UserBase(BaseModel):
