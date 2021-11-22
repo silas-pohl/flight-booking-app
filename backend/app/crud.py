@@ -1,7 +1,14 @@
+import sqlalchemy
 from sqlalchemy.orm import Session
+
+from fastapi import HTTPException, status
 
 from . import models, schemas, auth
 
+not_found_exception = HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail="Object not found"
+    )
 
 def get_user(db: Session, user_id: int):
     return db.query(models.User).filter(models.User.id == user_id).first()
@@ -25,7 +32,7 @@ def create_user(db: Session, user: schemas.UserCreate):
 
 
 def get_city(db: Session, city_id: int):
-    return db.query(models.City).filter(models.City.id == city_id)
+    return db.query(models.City).filter(models.City.id == city_id).one()
 
 
 def get_cities(db: Session, skip: int = 0, limit: int = 100):
@@ -33,7 +40,10 @@ def get_cities(db: Session, skip: int = 0, limit: int = 100):
 
 
 def get_airport(db: Session, airport_id: int):
-    return db.query(models.Airport).filter(models.Airport.id == airport_id)
+    try:
+        return db.query(models.Airport).filter(models.Airport.id == airport_id).one()
+    except sqlalchemy.exc.NoResultFound:
+        raise not_found_exception 
 
 
 def get_airports(db: Session, skip: int = 0, limit: int = 100):
@@ -41,16 +51,27 @@ def get_airports(db: Session, skip: int = 0, limit: int = 100):
 
 
 def get_flight(db: Session, flight_id: int):
-    return db.query(models.Flight).filter(models.Flight.id == flight_id)
+    try:
+        return db.query(models.Flight).filter(models.Flight.id == flight_id).one()
+    except sqlalchemy.exc.NoResultFound:
+        raise not_found_exception
 
 
-def get_suitable_flights(db: Session, departure_airport_id: int, destination_airport_id: int):
+def get_suitable_flights(db: Session, departure_airport_id: int, destination_airport_id: int, skip: int = 0, limit: int = 100):
     return db.query(models.Flight).filter(models.Flight.departure_airport_id == departure_airport_id,
-    models.Flight.destination_airport_id == destination_airport_id)
+    models.Flight.destination_airport_id == destination_airport_id).offset(skip).limit(limit).all()
 
 
 def get_all_flights(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Flight).offset(skip).limit(limit).all()
+
+
+def create_flight(db: Session, flight: schemas.FlightBase):
+    db_flight = models.Flight(**flight.dict())
+    db.add(db_flight)
+    db.commit()
+    db.refresh(db_flight)
+    return db_flight
 
 
 def get_tickets(db: Session, skip: int = 0, limit: int = 100):

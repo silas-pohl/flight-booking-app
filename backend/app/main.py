@@ -58,6 +58,7 @@ def authenticate_user(email: str, password: str, db: Session):
         return False
     return user
 
+
 # Routes
 
 @app.get("/")
@@ -72,32 +73,31 @@ async def read_users_me(current_user: schemas.User = Depends(auth.get_current_ac
 
 @app.get("/users/me/tickets/")
 async def read_own_tickets(current_user: schemas.User = Depends(auth.get_current_active_user), db: Session=Depends(get_db)):
-    tickets = crud.get_user_tickets(db, current_user.id)
-    return tickets
+    return crud.get_user_tickets(db, current_user.id) 
 
 
 @app.get("/flights/{flight_id}", response_model=schemas.Flight)
-async def get_flight(current_user: schemas.User = Depends(auth.get_current_active_user), db: Session=Depends(get_db)):
-    pass
+async def get_flight(flight_id: int, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session=Depends(get_db)):
+    return crud.get_flight(db, flight_id)
 
 
 @app.post("/booking/{flight_id}", response_model=schemas.Ticket)
-async def book_flight(current_user: schemas.User = Depends(auth.get_current_active_user), db: Session=Depends(get_db)):
+async def book_flight(flight_id: int, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session=Depends(get_db)):
     pass
 
 
 @app.post("/cancellation/{ticket_id}")
-async def cancel_flight(current_user: schemas.User = Depends(auth.get_current_active_user), db: Session=Depends(get_db)):
+async def cancel_flight(ticket_id: int, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session=Depends(get_db)):
     pass
 
 
 # Admin Routes
 
 @app.post("/flights", response_model=schemas.Flight)
-async def create_flight(flight: schemas.FlightBase, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session=Depends(get_db)):
-    pass
+async def create_flight(flight: schemas.FlightBase, current_user: schemas.User = Depends(auth.get_current_active_admin_user), db: Session=Depends(get_db)):
+    return crud.create_flight(db, flight)
 
 
 @app.put("/flights/{flight_id}", response_model=schemas.Flight)
-async def alter_flight(flight: schemas.FlightBase, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session=Depends(get_db)):
+async def alter_flight(flight_id: int, flight: schemas.FlightBase, current_user: schemas.User = Depends(auth.get_current_active_admin_user), db: Session=Depends(get_db)):
     pass
