@@ -23,7 +23,6 @@ class ItemBase(BaseModel):
         orm_mode = True
 
 class Item(ItemBase):
-    id: int
     owner_id: int
 
     class Config:
@@ -57,6 +56,10 @@ class Flight(ItemBase):
 
     class Config:
         orm_mode = True
+
+# Tickets
+class Ticket(Item):
+    flight_id: str
 
 # Users 
 class UserBase(BaseModel):

@@ -15,18 +15,7 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     is_admin = Column(Boolean, default=False)
 
-    items = relationship("Item", back_populates="owner")
-
-
-class Item(Base):
-    __tablename__ = "items"
-
-    id = Column(Integer, primary_key=True, index=True)
-    title = Column(String, index=True)
-    description = Column(String, index=True)
-    owner_id = Column(Integer, ForeignKey("users.id"))
-
-    owner = relationship("User", back_populates="items")
+    tickets = relationship("Ticket", back_populates="owner")
 
 
 class City(Base):
@@ -68,4 +57,19 @@ class Flight(Base):
 
     departure_airport = relationship("Airport", back_populates="flights")
     destination_airport = relationship("Airport", back_populates="flights")
+    tickets = relationship("Ticket", back_populates="flights")
+
+
+class Ticket(Base):
+    __tablename__ = "tickets"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, index=True)
+    description = Column(String, index=True)
+    owner_id = Column(Integer, ForeignKey("users.id"))
+    flight_id = Column(Integer, ForeignKey("flights.id"))
+
+    owner = relationship("User", back_populates="tickets")
+    flight = relationship("Flight", back_populates="tickets")
+
 
