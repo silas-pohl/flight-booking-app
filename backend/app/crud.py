@@ -24,11 +24,40 @@ def create_user(db: Session, user: schemas.UserCreate):
     return db_user
 
 
+def get_city(db: Session, city_id: int):
+    return db.query(models.City).filter(models.City.id == city_id)
+
+
+def get_cities(db: Session, skip: int = 0, limit: int = 100):
+    return db.query(models.City).offset(skip).limit(limit).all()
+
+
+def get_airport(db: Session, airport_id: int):
+    return db.query(models.Airport).filter(models.Airport.id == airport_id)
+
+
+def get_airports(db: Session, skip: int = 0, limit: int = 100):
+    return db.query(models.Airport).offset(skip).limit(limit).all()
+
+
+def get_flight(db: Session, flight_id: int):
+    return db.query(models.Flight).filter(models.Flight.id == flight_id)
+
+
+def get_suitable_flights(db: Session, departure_airport_id: int, destination_airport_id: int):
+    return db.query(models.Flight).filter(models.Flight.departure_airport_id == departure_airport_id,
+    models.Flight.destination_airport_id == destination_airport_id)
+
+
+def get_all_flights(db: Session, skip: int = 0, limit: int = 100):
+    return db.query(models.Flight).offset(skip).limit(limit).all()
+
+
 def get_tickets(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Ticket).offset(skip).limit(limit).all()
 
 
-def get_user_tickets(db: Session, user_id: int,skip: int = 0, limit: int = 100):
+def get_user_tickets(db: Session, user_id: int, skip: int = 0, limit: int = 100):
     return db.query(models.Ticket).filter(models.Ticket.owner_id==user_id).offset(skip).limit(limit).all()
 
 

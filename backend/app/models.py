@@ -1,7 +1,7 @@
 from typing import Collection
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql.sqltypes import FLOAT, INTEGER, TIMESTAMP
+from sqlalchemy.sql.sqltypes import FLOAT, TIMESTAMP
 
 from .database import Base
 

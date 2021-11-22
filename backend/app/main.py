@@ -72,8 +72,8 @@ async def read_users_me(current_user: schemas.User = Depends(auth.get_current_ac
 
 @app.get("/users/me/tickets/")
 async def read_own_tickets(current_user: schemas.User = Depends(auth.get_current_active_user), db: Session=Depends(get_db)):
-    tickets = crud.get_user_tickets(db, current_user)
-    return [{"tickets": tickets}]
+    tickets = crud.get_user_tickets(db, current_user.id)
+    return tickets
 
 
 @app.get("/flights/{flight_id}", response_model=schemas.Flight)
