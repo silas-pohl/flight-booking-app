@@ -10,12 +10,11 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True)
-    full_name = Column(String, unique=True, index=True)
+    first_name = Column(String, unique=True, index=True)
+    last_name = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     is_active = Column(Boolean, default=True)
     is_admin = Column(Boolean, default=False)
-
-    tickets = relationship("Ticket", back_populates="owner")
 
 
 class City(Base):
@@ -26,8 +25,6 @@ class City(Base):
     description = Column(String, index=True)
     country = Column(String, index=True)
 
-    airports = relationship("Airport", back_populates="city")
-
 
 class Airport(Base):
     __tablename__ = "airports"
@@ -37,9 +34,7 @@ class Airport(Base):
     description = Column(String, index=True)
     city_id = Column(Integer, ForeignKey("cities.id")) 
     
-    city = relationship("City", back_populates="airports") 
-    departing_flights = relationship("Flight", back_populates="airport")
-    arriving_flights = relationship("Flight", back_populates="airport") 
+    city = relationship("City", foreign_keys=[city_id]) 
 
 
 class Flight(Base):
@@ -55,9 +50,8 @@ class Flight(Base):
     ticket_price_dollars = Column(FLOAT, index=True)
     max_tickets = Column(Integer, index=True)
 
-    departure_airport = relationship("Airport", back_populates="flights")
-    destination_airport = relationship("Airport", back_populates="flights")
-    tickets = relationship("Ticket", back_populates="flights")
+    departure_airport = relationship("Airport", foreign_keys=[departure_airport_id])
+    destination_airport = relationship("Airport", foreign_keys=[destination_airport_id])
 
 
 class Ticket(Base):
@@ -69,7 +63,7 @@ class Ticket(Base):
     owner_id = Column(Integer, ForeignKey("users.id"))
     flight_id = Column(Integer, ForeignKey("flights.id"))
 
-    owner = relationship("User", back_populates="tickets")
-    flight = relationship("Flight", back_populates="tickets")
+    owner = relationship("User", foreign_keys=[owner_id])
+    flight = relationship("Flight", foreign_keys=[flight_id])
 
 

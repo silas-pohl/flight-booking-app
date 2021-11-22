@@ -79,7 +79,8 @@ class Ticket(TicketBase):
 # Users 
 class UserBase(BaseModel):
     email: str
-    full_name: Optional[str] = None
+    first_name: str
+    last_name: str
     
 
 class User(UserBase):
