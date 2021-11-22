@@ -58,6 +58,7 @@ def authenticate_user(email: str, password: str, db: Session):
         return False
     return user
 
+
 # Routes
 
 @app.get("/")
@@ -95,7 +96,6 @@ async def cancel_flight(ticket_id: int, current_user: schemas.User = Depends(aut
 @app.post("/flights", response_model=schemas.Flight)
 async def create_flight(flight: schemas.FlightBase, current_user: schemas.User = Depends(auth.get_current_active_admin_user), db: Session=Depends(get_db)):
     return crud.create_flight(db, flight)
-     
 
 
 @app.put("/flights/{flight_id}", response_model=schemas.Flight)
