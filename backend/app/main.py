@@ -64,21 +64,6 @@ def authenticate_user(email: str, password: str, db: Session):
 def read_root():
     return {"Hello": "World"}
 
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: Optional[str] = None):
-    return {"item_id": item_id, "q": q}
-
-@app.get("/database")
-def database():
-    conn = psycopg2.connect(
-        database = os.getenv('POSTGRES_DATABASE'),
-        user = os.getenv('POSTGRES_USER'),
-        password = os.getenv('POSTGRES_PASSWORD'),
-        host = os.getenv('POSTGRES_HOST'), 
-        port = os.getenv('POSTGRES_PORT')
-    )
-    return {"data": "Opened database successfully"}
-
 
 @app.get("/users/me/", response_model=schemas.User)
 async def read_users_me(current_user: schemas.User = Depends(auth.get_current_active_user)):
@@ -92,16 +77,27 @@ async def read_own_tickets(current_user: schemas.User = Depends(auth.get_current
 
 
 @app.get("/flights/{flight_id}", response_model=schemas.Flight)
-async def get_flight(db: Session=Depends(get_db)):
+async def get_flight(current_user: schemas.User = Depends(auth.get_current_active_user), db: Session=Depends(get_db)):
     pass
+
+
+@app.post("/booking/{flight_id}", response_model=schemas.Ticket)
+async def book_flight(current_user: schemas.User = Depends(auth.get_current_active_user), db: Session=Depends(get_db)):
+    pass
+
+
+@app.post("/cancellation/{ticket_id}")
+async def cancel_flight(current_user: schemas.User = Depends(auth.get_current_active_user), db: Session=Depends(get_db)):
+    pass
+
 
 # Admin Routes
 
 @app.post("/flights", response_model=schemas.Flight)
-async def create_flight(flight: schemas.FlightBase, db: Session=Depends(get_db)):
+async def create_flight(flight: schemas.FlightBase, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session=Depends(get_db)):
     pass
 
 
 @app.put("/flights/{flight_id}", response_model=schemas.Flight)
-async def alter_flight(flight: schemas.FlightBase, db: Session=Depends(get_db)):
+async def alter_flight(flight: schemas.FlightBase, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session=Depends(get_db)):
     pass
