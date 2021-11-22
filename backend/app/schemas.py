@@ -13,40 +13,42 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     username: Optional[str] = None
 
-# Items: placeholders for flights 
+
+# Items: Basic Class for Flights, Cities and Airports 
 class ItemBase(BaseModel):
-    id: int
     title: str
     description: Optional[str] = None
 
-    class Config:
-        orm_mode = True
-
-class Item(ItemBase):
+# Owned Items: Basic Class for Tickets
+class OwnedItemBase(ItemBase):
     owner_id: int
 
-    class Config:
-        orm_mode = True
-
-class ItemCreate(ItemBase):
-    pass
 
 # Cities
-class City(ItemBase):
+class CityBase(ItemBase):
     country: str
+
+
+class City(CityBase):
+    id: int
 
     class Config:
         orm_mode = True
         
 # Airports
-class Airport(ItemBase):
+class AirportBase(ItemBase):
     city_id: int
+
+
+class Airport(AirportBase):
+    id: int
 
     class Config:
         orm_mode = True
 
+
 # Flights
-class Flight(ItemBase):
+class FlightBase(ItemBase):
     departure_airport_id: int
     destination_airport_id: int
     departure_time_utc: datetime
@@ -54,12 +56,25 @@ class Flight(ItemBase):
     ticket_price_dollars: float
     max_tickets: int
 
+
+class Flight(FlightBase):
+    id: int
+
     class Config:
         orm_mode = True
 
+
 # Tickets
-class Ticket(Item):
+class TicketBase(OwnedItemBase):
+    id: int 
+
+
+class Ticket(TicketBase):
     flight_id: str
+
+    class Config:
+        orm_mode = True
+
 
 # Users 
 class UserBase(BaseModel):
@@ -71,7 +86,7 @@ class User(UserBase):
     id: int
     is_active: bool
     is_admin: bool
-    items: List[Item] = []
+    items: List[ItemBase] = []
 
     class Config:
         orm_mode = True

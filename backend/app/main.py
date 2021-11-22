@@ -85,6 +85,23 @@ async def read_users_me(current_user: schemas.User = Depends(auth.get_current_ac
     return current_user
 
 
-@app.get("/users/me/items/")
-async def read_own_items(current_user: schemas.User = Depends(auth.get_current_active_user)):
-    return [{"item_id": "Foo", "owner": current_user.username}]
+@app.get("/users/me/tickets/")
+async def read_own_tickets(current_user: schemas.User = Depends(auth.get_current_active_user), db: Session=Depends(get_db)):
+    tickets = crud.get_user_tickets(db, current_user)
+    return [{"tickets": tickets}]
+
+
+@app.get("/flights/{flight_id}", response_model=schemas.Flight)
+async def get_flight(db: Session=Depends(get_db)):
+    pass
+
+# Admin Routes
+
+@app.post("/flights", response_model=schemas.Flight)
+async def create_flight(flight: schemas.FlightBase, db: Session=Depends(get_db)):
+    pass
+
+
+@app.put("/flights/{flight_id}", response_model=schemas.Flight)
+async def alter_flight(flight: schemas.FlightBase, db: Session=Depends(get_db)):
+    pass

@@ -24,13 +24,17 @@ def create_user(db: Session, user: schemas.UserCreate):
     return db_user
 
 
-def get_items(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Item).offset(skip).limit(limit).all()
+def get_tickets(db: Session, skip: int = 0, limit: int = 100):
+    return db.query(models.Ticket).offset(skip).limit(limit).all()
 
 
-def create_user_item(db: Session, item: schemas.ItemCreate, user_id: int):
-    db_item = models.Item(**item.dict(), owner_id=user_id)
-    db.add(db_item)
+def get_user_tickets(db: Session, user_id: int,skip: int = 0, limit: int = 100):
+    return db.query(models.Ticket).filter(models.Ticket.owner_id==user_id).offset(skip).limit(limit).all()
+
+
+def create_user_ticket(db: Session, ticket: schemas.Ticket, user_id: int, ticket_flight_id: int):
+    db_ticket = models.Ticket(**ticket.dict(), owner_id=user_id, flight_id=ticket_flight_id)
+    db.add(db_ticket)
     db.commit()
-    db.refresh(db_item)
-    return db_item
+    db.refresh(db_ticket)
+    return db_ticket
