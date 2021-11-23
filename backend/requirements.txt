@@ -2,3 +2,7 @@ fastapi
 pydantic
 uvicorn
 psycopg2
+python-jose
+passlib
+python-multipart
+sqlalchemy
