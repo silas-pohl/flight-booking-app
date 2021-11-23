@@ -1,9 +1,9 @@
-from typing import Collection
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import FLOAT, TIMESTAMP
 
 from .database import Base
+
 
 class User(Base):
     __tablename__ = "users"
@@ -32,9 +32,9 @@ class Airport(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, index=True)
     description = Column(String, index=True)
-    city_id = Column(Integer, ForeignKey("cities.id")) 
-    
-    city = relationship("City", foreign_keys=[city_id]) 
+    city_id = Column(Integer, ForeignKey("cities.id"))
+
+    city = relationship("City", foreign_keys=[city_id])
 
 
 class Flight(Base):
@@ -50,8 +50,10 @@ class Flight(Base):
     ticket_price_dollars = Column(FLOAT, index=True)
     max_tickets = Column(Integer, index=True)
 
-    departure_airport = relationship("Airport", foreign_keys=[departure_airport_id])
-    destination_airport = relationship("Airport", foreign_keys=[destination_airport_id])
+    departure_airport = relationship(
+        "Airport", foreign_keys=[departure_airport_id])
+    destination_airport = relationship(
+        "Airport", foreign_keys=[destination_airport_id])
 
 
 class Ticket(Base):
@@ -65,5 +67,3 @@ class Ticket(Base):
 
     owner = relationship("User", foreign_keys=[owner_id])
     flight = relationship("Flight", foreign_keys=[flight_id])
-
-

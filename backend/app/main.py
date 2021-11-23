@@ -1,10 +1,6 @@
-from typing import Optional, List
-import psycopg2
-import os
 from datetime import timedelta
 from fastapi import Depends, FastAPI, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from pydantic import BaseModel
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from . import crud, models, schemas, auth
 from .database import SessionLocal, engine
@@ -14,6 +10,8 @@ models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
 
 # Dependency
+
+
 def get_db():
     db = SessionLocal()
     try:
@@ -46,9 +44,10 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
         )
     access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = auth.create_access_token(
-        data={"sub": user.email, "admin":user.is_admin}, expires_delta=access_token_expires
+        data={"sub": user.email, "admin": user.is_admin}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
+
 
 def authenticate_user(email: str, password: str, db: Session):
     user = crud.get_user_by_email(db, email=email)
@@ -72,32 +71,32 @@ async def read_users_me(current_user: schemas.User = Depends(auth.get_current_ac
 
 
 @app.get("/users/me/tickets/")
-async def read_own_tickets(current_user: schemas.User = Depends(auth.get_current_active_user), db: Session=Depends(get_db)):
-    return crud.get_user_tickets(db, current_user.id) 
+async def read_own_tickets(current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
+    return crud.get_user_tickets(db, current_user.id)
 
 
 @app.get("/flights/{flight_id}", response_model=schemas.Flight)
-async def get_flight(flight_id: int, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session=Depends(get_db)):
+async def get_flight(flight_id: int, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
     return crud.get_flight(db, flight_id)
 
 
 @app.post("/booking/{flight_id}", response_model=schemas.Ticket)
-async def book_flight(flight_id: int, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session=Depends(get_db)):
+async def book_flight(flight_id: int, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
     pass
 
 
 @app.post("/cancellation/{ticket_id}")
-async def cancel_flight(ticket_id: int, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session=Depends(get_db)):
+async def cancel_flight(ticket_id: int, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
     pass
 
 
 # Admin Routes
 
 @app.post("/flights", response_model=schemas.Flight)
-async def create_flight(flight: schemas.FlightBase, current_user: schemas.User = Depends(auth.get_current_active_admin_user), db: Session=Depends(get_db)):
+async def create_flight(flight: schemas.FlightBase, current_user: schemas.User = Depends(auth.get_current_active_admin_user), db: Session = Depends(get_db)):
     return crud.create_flight(db, flight)
 
 
 @app.put("/flights/{flight_id}", response_model=schemas.Flight)
-async def alter_flight(flight_id: int, flight: schemas.FlightBase, current_user: schemas.User = Depends(auth.get_current_active_admin_user), db: Session=Depends(get_db)):
+async def alter_flight(flight_id: int, flight: schemas.FlightBase, current_user: schemas.User = Depends(auth.get_current_active_admin_user), db: Session = Depends(get_db)):
     pass

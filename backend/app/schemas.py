@@ -1,10 +1,13 @@
 from typing import List, Optional
 
+from datetime import datetime
+
 from pydantic import BaseModel
 
-from datetime import datetime, timezone
 
 # JWT
+
+
 class Token(BaseModel):
     access_token: str
     token_type: str
@@ -14,12 +17,14 @@ class TokenData(BaseModel):
     username: Optional[str] = None
 
 
-# Items: Basic Class for Flights, Cities and Airports 
+# Items: Basic Class for Flights, Cities and Airports
 class ItemBase(BaseModel):
     title: str
     description: Optional[str] = None
 
 # Owned Items: Basic Class for Tickets
+
+
 class OwnedItemBase(ItemBase):
     owner_id: int
 
@@ -34,8 +39,10 @@ class City(CityBase):
 
     class Config:
         orm_mode = True
-        
+
 # Airports
+
+
 class AirportBase(ItemBase):
     city_id: int
 
@@ -66,7 +73,7 @@ class Flight(FlightBase):
 
 # Tickets
 class TicketBase(OwnedItemBase):
-    id: int 
+    id: int
 
 
 class Ticket(TicketBase):
@@ -76,12 +83,12 @@ class Ticket(TicketBase):
         orm_mode = True
 
 
-# Users 
+# Users
 class UserBase(BaseModel):
     email: str
     first_name: str
     last_name: str
-    
+
 
 class User(UserBase):
     id: int
