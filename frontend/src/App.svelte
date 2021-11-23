@@ -1,30 +1,23 @@
-<script lang="ts">
-	export let name: string;
+<script>
+  import { Route } from 'tinro'; 
+  import Login from "./pages/Login.svelte";
+  import Register from "./pages/Register.svelte";
 </script>
 
 <main>
-	<h1>Hello {name}!</h1>
-	<p>Visit the <a href="https://svelte.dev/tutorial">Svelte tutorial</a> to learn how to build Svelte apps.</p>
+  <Route path="/"><h1>Main</h1></Route>
+  <Route path="/about"><h1>About</h1></Route>
+  <Route path="/login"><Login/></Route>
+  <Route path="/register"><Register/></Route>
 </main>
 
 <style>
-	main {
-		text-align: center;
-		padding: 1em;
-		max-width: 240px;
-		margin: 0 auto;
-	}
-
-	h1 {
-		color: #ff3e00;
-		text-transform: uppercase;
-		font-size: 4em;
-		font-weight: 100;
-	}
-
-	@media (min-width: 640px) {
-		main {
-			max-width: none;
-		}
-	}
+  main {
+    width: 100vw;
+    height: 100vh;
+    max-width: 1300px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
 </style>
