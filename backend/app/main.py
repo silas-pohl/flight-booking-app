@@ -22,7 +22,7 @@ def get_db():
 
 # Register endpoint (works)
 
-@app.post("/users/", response_model=schemas.User)
+@app.post("/register/", response_model=schemas.User, status_code=201)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db_user = crud.get_user_by_email(db, email=user.email)
     if db_user:
@@ -32,7 +32,7 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
 
 # Login endpoint
 
-@app.post("/token", response_model=schemas.Token)
+@app.post("/login", response_model=schemas.Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
     db = get_db()
     user = authenticate_user(form_data.username, form_data.password, next(db))
@@ -60,17 +60,13 @@ def authenticate_user(email: str, password: str, db: Session):
 
 # Routes
 
-@app.get("/")
-def read_root():
-    return {"Hello": "World"}
 
-
-@app.get("/users/me/", response_model=schemas.User)
+@app.get("/account/", response_model=schemas.User)
 async def read_users_me(current_user: schemas.User = Depends(auth.get_current_active_user)):
     return current_user
 
 
-@app.get("/users/me/tickets/")
+@app.get("/tickets/")
 async def read_own_tickets(current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
     return crud.get_user_tickets(db, current_user.id)
 
