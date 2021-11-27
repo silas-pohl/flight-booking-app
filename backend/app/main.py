@@ -83,7 +83,7 @@ async def read_own_ticket(ticket_id: uuid.UUID, current_user: schemas.User = Dep
 
 @app.get("/flights/")
 async def get_all_flights(current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
-    return crud.get_all_flights
+    return crud.get_all_flights(db)
 
 
 @app.get("/flights/{flight_id}", response_model=schemas.Flight)
