@@ -22,7 +22,7 @@ def get_db():
 
 # Register endpoint (works)
 
-@app.post("/register/", response_model=schemas.User, status_code=201)
+@app.post("/register/", response_model=schemas.User)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db_user = crud.get_user_by_email(db, email=user.email)
     if db_user:
@@ -32,7 +32,7 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
 
 # Login endpoint
 
-@app.post("/login", response_model=schemas.Token)
+@app.post("/login/", response_model=schemas.Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
     db = get_db()
     user = authenticate_user(form_data.username, form_data.password, next(db))
@@ -61,14 +61,28 @@ def authenticate_user(email: str, password: str, db: Session):
 # Routes
 
 
-@app.get("/account/", response_model=schemas.User)
+@app.get("/me/", response_model=schemas.User)
 async def read_users_me(current_user: schemas.User = Depends(auth.get_current_active_user)):
-    return current_user
+    return {
+        "email": current_user.email,
+        "first_name": current_user.first_name,
+        "last_name": current_user.last_name
+    }
 
 
-@app.get("/tickets/")
+@app.get("/me/tickets/")
 async def read_own_tickets(current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
     return crud.get_user_tickets(db, current_user.id)
+
+
+@app.get("/me/tickets/{ticket_id}")
+async def read_own_ticket(ticket_id: int, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
+    return crud.get_user_ticket(db, current_user.id, ticket_id)
+
+
+@app.get("/flights/")
+async def get_all_flights(current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
+    return crud.get_all_flights
 
 
 @app.get("/flights/{flight_id}", response_model=schemas.Flight)
@@ -76,23 +90,27 @@ async def get_flight(flight_id: int, current_user: schemas.User = Depends(auth.g
     return crud.get_flight(db, flight_id)
 
 
-@app.post("/booking/{flight_id}", response_model=schemas.Ticket)
+@app.post("/me/booking/", response_model=schemas.Ticket)
 async def book_flight(flight_id: int, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
     pass
 
 
-@app.post("/cancellation/{ticket_id}")
+@app.post("/me/cancellation/")
 async def cancel_flight(ticket_id: int, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
     pass
 
 
 # Admin Routes
+@app.get("/users")
+async def get_all_users(current_user: schemas.User = Depends(auth.get_current_active_admin_user), db: Session = Depends(get_db)):
+    return crud.get_users(db)
 
-@app.post("/flights", response_model=schemas.Flight)
+
+@app.post("/flights/", response_model=schemas.Flight)
 async def create_flight(flight: schemas.FlightBase, current_user: schemas.User = Depends(auth.get_current_active_admin_user), db: Session = Depends(get_db)):
     return crud.create_flight(db, flight)
 
 
-@app.put("/flights/{flight_id}", response_model=schemas.Flight)
-async def alter_flight(flight_id: int, flight: schemas.FlightBase, current_user: schemas.User = Depends(auth.get_current_active_admin_user), db: Session = Depends(get_db)):
-    pass
+@app.delete("/flights/{flight_id}", response_model=schemas.Flight)
+async def alter_flight(flight_id: int, current_user: schemas.User = Depends(auth.get_current_active_admin_user), db: Session = Depends(get_db)):
+    return crud.delete_flight(db, flight_id)

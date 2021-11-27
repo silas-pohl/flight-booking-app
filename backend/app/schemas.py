@@ -6,8 +6,6 @@ from pydantic import BaseModel
 
 
 # JWT
-
-
 class Token(BaseModel):
     access_token: str
     token_type: str
@@ -17,36 +15,13 @@ class TokenData(BaseModel):
     username: Optional[str] = None
 
 
-# Items: Basic Class for Flights, Cities and Airports
-class ItemBase(BaseModel):
+# AirportBase: Basic Class for Airports
+class AirportBase(BaseModel):
     title: str
     description: Optional[str] = None
 
-# Owned Items: Basic Class for Tickets
-
-
-class OwnedItemBase(ItemBase):
-    owner_id: int
-
-
-# Cities
-class CityBase(ItemBase):
-    country: str
-
-
-class City(CityBase):
-    id: int
-
-    class Config:
-        orm_mode = True
 
 # Airports
-
-
-class AirportBase(ItemBase):
-    city_id: int
-
-
 class Airport(AirportBase):
     id: int
 
@@ -55,13 +30,13 @@ class Airport(AirportBase):
 
 
 # Flights
-class FlightBase(ItemBase):
+class FlightBase(BaseModel):
     departure_airport_id: int
     destination_airport_id: int
     departure_time_utc: datetime
     arrival_time_utc: datetime
     ticket_price_dollars: float
-    max_tickets: int
+    seats: int
 
 
 class Flight(FlightBase):
@@ -71,13 +46,18 @@ class Flight(FlightBase):
         orm_mode = True
 
 
+# Owned Items: Basic Class for Tickets
+class OwnedItemBase(BaseModel):
+    owner_id: int
+
+
 # Tickets
 class TicketBase(OwnedItemBase):
-    id: int
+    flight_id: int
 
 
 class Ticket(TicketBase):
-    flight_id: str
+    id: int
 
     class Config:
         orm_mode = True

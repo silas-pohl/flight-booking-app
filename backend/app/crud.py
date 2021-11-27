@@ -1,5 +1,6 @@
 import sqlalchemy
 from sqlalchemy.orm import Session
+from sqlalchemy.sql.functions import mode
 
 from fastapi import HTTPException, status
 
@@ -12,11 +13,17 @@ not_found_exception = HTTPException(
 
 
 def get_user(db: Session, user_id: int):
-    return db.query(models.User).filter(models.User.id == user_id).first()
+    try:
+        return db.query(models.User).filter(models.User.id == user_id).one()
+    except sqlalchemy.exc.NoResultFound as nrf:
+        raise not_found_exception from nrf
 
 
 def get_user_by_email(db: Session, email: str):
-    return db.query(models.User).filter(models.User.email == email).first()
+    try:
+        return db.query(models.User).filter(models.User.email == email).one()
+    except sqlalchemy.exc.NoResultFound as nrf:
+        raise not_found_exception from nrf
 
 
 def get_users(db: Session, skip: int = 0, limit: int = 100):
@@ -31,14 +38,6 @@ def create_user(db: Session, user: schemas.UserCreate):
     db.commit()
     db.refresh(db_user)
     return db_user
-
-
-def get_city(db: Session, city_id: int):
-    return db.query(models.City).filter(models.City.id == city_id).one()
-
-
-def get_cities(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.City).offset(skip).limit(limit).all()
 
 
 def get_airport(db: Session, airport_id: int):
@@ -59,17 +58,6 @@ def get_flight(db: Session, flight_id: int):
         raise not_found_exception from nrf
 
 
-def get_suitable_flights(
-        db: Session,
-        departure_airport_id: int,
-        destination_airport_id: int,
-        skip: int = 0, limit: int = 100):
-    return db.query(models.Flight)\
-        .filter(models.Flight.departure_airport_id == departure_airport_id,
-                models.Flight.destination_airport_id == destination_airport_id)\
-        .offset(skip).limit(limit).all()
-
-
 def get_all_flights(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Flight).offset(skip).limit(limit).all()
 
@@ -82,8 +70,18 @@ def create_flight(db: Session, flight: schemas.FlightBase):
     return db_flight
 
 
-def get_tickets(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Ticket).offset(skip).limit(limit).all()
+def delete_flight(db: Session, flight_id: int):
+    db.query(models.Flight).filter(models.Flight.id == flight_id).delete()
+    db.commit()
+    return flight_id
+
+
+def get_user_ticket(db: Session, user_id: int, ticket_id: int):
+    try:
+        return db.query(models.Ticket)\
+            .filter(models.Ticket.id == ticket_id, models.Ticket.owner_id == user_id).one()
+    except sqlalchemy.exc.NoResultFound as nrf:
+        raise not_found_exception from nrf
 
 
 def get_user_tickets(db: Session, user_id: int, skip: int = 0, limit: int = 100):

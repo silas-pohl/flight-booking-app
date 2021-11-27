@@ -17,32 +17,17 @@ class User(Base):
     is_admin = Column(Boolean, default=False)
 
 
-class City(Base):
-    __tablename__ = "cities"
-
-    id = Column(Integer, primary_key=True, index=True)
-    title = Column(String, index=True)
-    description = Column(String, index=True)
-    country = Column(String, index=True)
-
-
 class Airport(Base):
     __tablename__ = "airports"
 
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, index=True)
-    description = Column(String, index=True)
-    city_id = Column(Integer, ForeignKey("cities.id"))
-
-    city = relationship("City", foreign_keys=[city_id])
 
 
 class Flight(Base):
     __tablename__ = "flights"
 
     id = Column(Integer, primary_key=True, index=True)
-    title = Column(String, index=True)
-    description = Column(String, index=True)
     departure_time_utc = Column(TIMESTAMP, index=True)
     arrival_time_utc = Column(TIMESTAMP, index=True)
     departure_airport_id = Column(Integer, ForeignKey("airports.id"))
@@ -60,8 +45,6 @@ class Ticket(Base):
     __tablename__ = "tickets"
 
     id = Column(Integer, primary_key=True, index=True)
-    title = Column(String, index=True)
-    description = Column(String, index=True)
     owner_id = Column(Integer, ForeignKey("users.id"))
     flight_id = Column(Integer, ForeignKey("flights.id"))
 
