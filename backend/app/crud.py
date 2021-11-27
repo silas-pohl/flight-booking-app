@@ -108,11 +108,11 @@ def create_verification_entry(db: Session, email: str, verification_code: int, c
     db.refresh(db_verification_entry)
 
 
-def check_verification_entry(db: Session, email: str, verification_code: int):
+def get_verification_entry(db: Session, email: str):
     try:
         db_verification_entry = db.query(models.VerificationEntry)\
             .filter(models.VerificationEntry.email == email).one()
-        return (db_verification_entry.verfication_code == verification_code)
+        return db_verification_entry
     except sqlalchemy.exc.NoResultFound as nrf:
         raise not_found_exception from nrf
 
