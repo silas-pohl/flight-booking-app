@@ -4,8 +4,11 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
+import uuid
 
 # JWT
+
+
 class Token(BaseModel):
     access_token: str
     token_type: str
@@ -23,7 +26,7 @@ class AirportBase(BaseModel):
 
 # Airports
 class Airport(AirportBase):
-    id: int
+    id: uuid.UUID
 
     class Config:
         orm_mode = True
@@ -31,8 +34,8 @@ class Airport(AirportBase):
 
 # Flights
 class FlightBase(BaseModel):
-    departure_airport_id: int
-    destination_airport_id: int
+    departure_airport_id: uuid.UUID
+    destination_airport_id: uuid.UUID
     departure_time_utc: datetime
     arrival_time_utc: datetime
     ticket_price_dollars: float
@@ -40,7 +43,7 @@ class FlightBase(BaseModel):
 
 
 class Flight(FlightBase):
-    id: int
+    id: uuid.UUID
 
     class Config:
         orm_mode = True
@@ -48,16 +51,16 @@ class Flight(FlightBase):
 
 # Owned Items: Basic Class for Tickets
 class OwnedItemBase(BaseModel):
-    owner_id: int
+    owner_id: uuid.UUID
 
 
 # Tickets
 class TicketBase(OwnedItemBase):
-    flight_id: int
+    flight_id: uuid.UUID
 
 
 class Ticket(TicketBase):
-    id: int
+    id: uuid.UUID
 
     class Config:
         orm_mode = True
@@ -71,7 +74,7 @@ class UserBase(BaseModel):
 
 
 class User(UserBase):
-    id: int
+    id: uuid.UUID
     is_active: bool
     is_admin: bool
 

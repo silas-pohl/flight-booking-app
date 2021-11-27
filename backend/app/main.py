@@ -2,6 +2,7 @@ from datetime import timedelta
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+import uuid
 from . import crud, models, schemas, auth
 from .database import SessionLocal, engine
 
@@ -76,7 +77,7 @@ async def read_own_tickets(current_user: schemas.User = Depends(auth.get_current
 
 
 @app.get("/me/tickets/{ticket_id}")
-async def read_own_ticket(ticket_id: int, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
+async def read_own_ticket(ticket_id: uuid.UUID, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
     return crud.get_user_ticket(db, current_user.id, ticket_id)
 
 
@@ -86,17 +87,17 @@ async def get_all_flights(current_user: schemas.User = Depends(auth.get_current_
 
 
 @app.get("/flights/{flight_id}", response_model=schemas.Flight)
-async def get_flight(flight_id: int, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
+async def get_flight(flight_id: uuid.UUID, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
     return crud.get_flight(db, flight_id)
 
 
 @app.post("/me/booking/", response_model=schemas.Ticket)
-async def book_flight(flight_id: int, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
+async def book_flight(flight_id: uuid.UUID, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
     pass
 
 
 @app.post("/me/cancellation/")
-async def cancel_flight(ticket_id: int, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
+async def cancel_flight(ticket_id: uuid.UUID, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
     pass
 
 
@@ -112,5 +113,5 @@ async def create_flight(flight: schemas.FlightBase, current_user: schemas.User =
 
 
 @app.delete("/flights/{flight_id}", response_model=schemas.Flight)
-async def alter_flight(flight_id: int, current_user: schemas.User = Depends(auth.get_current_active_admin_user), db: Session = Depends(get_db)):
+async def alter_flight(flight_id: uuid.UUID, current_user: schemas.User = Depends(auth.get_current_active_admin_user), db: Session = Depends(get_db)):
     return crud.delete_flight(db, flight_id)
