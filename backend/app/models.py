@@ -50,3 +50,11 @@ class Ticket(Base):
 
     owner = relationship("User", foreign_keys=[owner_id])
     flight = relationship("Flight", foreign_keys=[flight_id])
+
+
+class VerificationEntry(Base):
+    __tablename__ = "verification_entries"
+
+    email = Column(String, primary_key=True, index=True)
+    verfication_code = Column(Integer, index=True)
+    created = Column(TIMESTAMP, index=True)

@@ -85,3 +85,13 @@ class UserLogin(User):
 
 class UserCreate(UserBase):
     password: str
+
+
+# Email verification entry
+class EmailVerificationEntry(BaseModel):
+    email: str
+    verification_code: int
+    created: datetime
+
+    class Config:
+        orm_mode = True
