@@ -12,4 +12,8 @@ declare interface RegisterData {
     password: string
 }
 
-declare type AuthError = "" | "incorrectCred" | "emailTaken" 
+declare interface AuthNotification {
+    kind: "error" | "info" | "info-square" | "success" | "warning" | "warning-alt",
+    title: string,
+    subtitle: string
+}

@@ -11,29 +11,7 @@
     "test": "jest",
     "test:watch": "npm test -- --watch"
   },
-  "jest": {
-    "setupFilesAfterEnv": [
-      "@testing-library/jest-dom/extend-expect"
-    ],
-    "testEnvironment": "jsdom",
-    "transform": {
-      "^.+\\.svelte$": [
-        "svelte-jester",
-        {
-          "preprocess": true
-        }
-      ],
-      "^.+\\.ts$": "ts-jest",
-      "^.+\\.js$": "babel-jest"
-    },
-    "moduleFileExtensions": [
-      "js",
-      "ts",
-      "svelte"
-    ]
-  },
   "devDependencies": {
-    "@babel/preset-env": "^7.16.0",
     "@rollup/plugin-commonjs": "^17.0.0",
     "@rollup/plugin-node-resolve": "^11.0.0",
     "@rollup/plugin-typescript": "^8.0.0",
