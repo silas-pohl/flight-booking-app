@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from . import crud, models, schemas, auth, mail
+import uuid
 from .database import SessionLocal, engine
 
 models.Base.metadata.create_all(bind=engine)
@@ -28,6 +29,8 @@ app.add_middleware(
 )
 
 # Dependency
+
+
 def get_db():
     db = SessionLocal()
     try:
@@ -88,6 +91,7 @@ def emailtoken(email: str, db: Session = Depends(get_db)):
 #    )
 #    return {"access_token": access_token, "token_type": "bearer"}
 
+
 def authenticate_user(email: str, password: str, db: Session):
     user = crud.get_user_by_email(db, email=email)
     if not user:
@@ -99,43 +103,57 @@ def authenticate_user(email: str, password: str, db: Session):
 
 # Routes
 
-@app.get("/")
-def read_root():
-    return {"Hello": "World"}
 
-
-@app.get("/users/me/", response_model=schemas.User)
+@app.get("/me/", response_model=schemas.User)
 async def read_users_me(current_user: schemas.User = Depends(auth.get_current_active_user)):
-    return current_user
+    return {
+        "email": current_user.email,
+        "first_name": current_user.first_name,
+        "last_name": current_user.last_name
+    }
 
 
-@app.get("/users/me/tickets/")
-async def read_own_tickets(current_user: schemas.User = Depends(auth.get_current_active_user), db: Session=Depends(get_db)):
-    return crud.get_user_tickets(db, current_user.id) 
+@app.get("/me/tickets/")
+async def read_own_tickets(current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
+    return crud.get_user_tickets(db, current_user.id)
+
+
+@app.get("/me/tickets/{ticket_id}")
+async def read_own_ticket(ticket_id: uuid.UUID, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
+    return crud.get_user_ticket(db, current_user.id, ticket_id)
+
+
+@app.get("/flights/")
+async def get_all_flights(current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
+    return crud.get_all_flights(db)
 
 
 @app.get("/flights/{flight_id}", response_model=schemas.Flight)
-async def get_flight(flight_id: int, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session=Depends(get_db)):
+async def get_flight(flight_id: uuid.UUID, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
     return crud.get_flight(db, flight_id)
 
 
-@app.post("/booking/{flight_id}", response_model=schemas.Ticket)
-async def book_flight(flight_id: int, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session=Depends(get_db)):
+@app.post("/me/booking/", response_model=schemas.Ticket)
+async def book_flight(flight_id: uuid.UUID, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
     pass
 
 
-@app.post("/cancellation/{ticket_id}")
-async def cancel_flight(ticket_id: int, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session=Depends(get_db)):
+@app.post("/me/cancellation/")
+async def cancel_flight(ticket_id: uuid.UUID, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
     pass
 
 
 # Admin Routes
+@app.get("/users")
+async def get_all_users(current_user: schemas.User = Depends(auth.get_current_active_admin_user), db: Session = Depends(get_db)):
+    return crud.get_users(db)
 
-@app.post("/flights", response_model=schemas.Flight)
-async def create_flight(flight: schemas.FlightBase, current_user: schemas.User = Depends(auth.get_current_active_admin_user), db: Session=Depends(get_db)):
+
+@app.post("/flights/", response_model=schemas.Flight)
+async def create_flight(flight: schemas.FlightBase, current_user: schemas.User = Depends(auth.get_current_active_admin_user), db: Session = Depends(get_db)):
     return crud.create_flight(db, flight)
 
 
-@app.put("/flights/{flight_id}", response_model=schemas.Flight)
-async def alter_flight(flight_id: int, flight: schemas.FlightBase, current_user: schemas.User = Depends(auth.get_current_active_admin_user), db: Session=Depends(get_db)):
-    pass
+@app.delete("/flights/{flight_id}", response_model=schemas.Flight)
+async def alter_flight(flight_id: uuid.UUID, current_user: schemas.User = Depends(auth.get_current_active_admin_user), db: Session = Depends(get_db)):
+    return crud.delete_flight(db, flight_id)
