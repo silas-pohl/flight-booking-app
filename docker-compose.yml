@@ -4,6 +4,8 @@ services:
     build: frontend/
     ports:
       - "5000:5000"
+    volumes:
+      - "./frontend/:/code/"
 
   backend:
     build: backend/
@@ -15,6 +17,7 @@ services:
       - backend/.env
     volumes:
       - ./backend/:/code/
+      
   database:
     image: "postgres:latest"
     ports:
