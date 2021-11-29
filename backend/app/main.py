@@ -2,7 +2,7 @@ from typing import Optional, List
 import psycopg2
 import os
 import re
-from random import randint
+from random import SystemRandom
 from datetime import timedelta
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -47,16 +47,16 @@ def emailtoken(email: str, db: Session = Depends(get_db)):
     if (crud.get_user_by_email(db, email=email)): raise HTTPException(status_code=409, detail="Email already registered")
     
     # Check if token already generated and send email
-    email_token: str = crud.read_email_token(db, email=email)
-    if (email_token): 
-        mail.send_token(email, email_token)
+    verification_code: str = crud.get_verification_entry(db, email=email)
+    if (verification_code): 
+        mail.send_token(email, verification_code)
         return {"email": email}
 
     # Generate token, write to db and send email
-    email_token: str = str(randint(10000000, 99999999))
-    crud.create_email_token(db, email=email, email_token=email_token)
+    verification_code: int = SystemRandom().randrange(10000000, 99999999)
+    crud.create_verification_entry(db, email=email, verification_code=verification_code)
     #TODO Async delete email token after 5min
-    mail.send_token(email, email_token)
+    mail.send_token(email, verification_code)
     return {"email": email}
 
 @app.post("/register")
