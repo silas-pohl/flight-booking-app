@@ -103,10 +103,10 @@ def create_verification_record(db: Session, email: str, verification_code: int, 
     db.refresh(db_verification_entry)
 
 
-def get_verification_record(db: Session, email: str):
+def get_verification_record(db: Session, email: str, action: str):
     try:
         db_verification_entry = db.query(models.VerificationRecord)\
-            .filter(models.VerificationEntry.email == email).one()
+            .filter(models.VerificationRecord.email == email, models.VerificationRecord.action == action).one()
         return db_verification_entry
     except sqlalchemy.exc.NoResultFound:
         return None
