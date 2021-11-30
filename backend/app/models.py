@@ -61,9 +61,12 @@ class Ticket(Base):
     flight = relationship("Flight", foreign_keys=[flight_id])
 
 
-class VerificationEntry(Base):
-    __tablename__ = "verification_entries"
+class VerificationRecord(Base):
+    __tablename__ = "verification_records"
 
-    email = Column(String, primary_key=True, index=True)
-    verfication_code = Column(Integer)
+    id = Column(UUID(as_uuid=True), primary_key=True,
+                index=True, default=uuid.uuid4)
+    email = Column(String)
+    action = Column(String)
+    verification_code = Column(Integer)
     created = Column(TIMESTAMP)
