@@ -49,7 +49,7 @@ class PayPalClient:
         return isinstance(data, str) or isinstance(data, int)
 
 
-class CreateOrder(PayPalClient):
+class CreateOrder():
 
     # 2. Set up your server to receive a call from the client
     """ This is the sample function to create an order. It uses the
@@ -95,7 +95,7 @@ class CreateOrder(PayPalClient):
             }
 
 
-class CaptureOrder(PayPalClient):
+class CaptureOrder():
 
     # 2. Set up your server to receive a call from the client
     """this sample function performs payment capture on the order.
@@ -110,6 +110,5 @@ class CaptureOrder(PayPalClient):
         return response
 
 
-paypal_client = PayPalClient()
-create_order = CreateOrder(paypal_client)
-capture_order = CaptureOrder(paypal_client)
+create_order = CreateOrder()
+capture_order = CaptureOrder()
