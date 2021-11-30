@@ -30,6 +30,10 @@ class Airport(AirportBase):
 
 
 # Flights
+class FlightID(BaseModel):
+    flight_id: uuid.UUID
+
+
 class FlightBase(BaseModel):
     departure_airport_id: uuid.UUID
     destination_airport_id: uuid.UUID
@@ -52,6 +56,10 @@ class OwnedItemBase(BaseModel):
 
 
 # Tickets
+class TicketID(BaseModel):
+    ticket_id: uuid.UUID
+
+
 class TicketBase(OwnedItemBase):
     flight_id: uuid.UUID
 
@@ -82,8 +90,10 @@ class User(UserBase):
 class UserLogin(User):
     hashed_password: str
 
+
 class EmailVerificationEntryBase(BaseModel):
     email: str
+
 
 class EmailVerificationEntry(EmailVerificationEntryBase):
     verification_code: int
@@ -98,6 +108,7 @@ class EmailVerification(BaseModel):
     email: str
     action: str
 
+
 class RegisterData(BaseModel):
     email: str
     first_name: str
@@ -105,7 +116,14 @@ class RegisterData(BaseModel):
     password: str
     verification_code: int
 
+
 class LoginData(BaseModel):
     email: str
     password: str
     verification_code: int
+
+# -----------------------------------------------------------------------------
+
+
+class OrderID(BaseModel):
+    order_id: str

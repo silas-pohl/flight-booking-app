@@ -41,7 +41,7 @@ class Flight(Base):
     destination_airport_id = Column(
         UUID(as_uuid=True), ForeignKey("airports.id"))
     ticket_price_dollars = Column(FLOAT)
-    max_tickets = Column(Integer)
+    seats = Column(Integer)
 
     departure_airport = relationship(
         "Airport", foreign_keys=[departure_airport_id])
@@ -56,6 +56,7 @@ class Ticket(Base):
                 index=True, default=uuid.uuid4)
     owner_id = Column(UUID(as_uuid=True), ForeignKey("users.id"))
     flight_id = Column(UUID(as_uuid=True), ForeignKey("flights.id"))
+    created = Column(TIMESTAMP)
 
     owner = relationship("User", foreign_keys=[owner_id])
     flight = relationship("Flight", foreign_keys=[flight_id])

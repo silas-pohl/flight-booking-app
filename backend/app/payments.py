@@ -68,6 +68,8 @@ class CreateOrder(PayPalClient):
     @staticmethod
     def build_request_body(flight: schemas.Flight, user: schemas.User):
         """Method to create body with CAPTURE intent"""
+
+        ticket_price_dollars = flight.ticket_price_dollars
         return \
             {
                 "intent": "CAPTURE",
@@ -79,17 +81,10 @@ class CreateOrder(PayPalClient):
                 },
                 "purchase_units": [
                     {
-                        "items": [
-                            {
-                                "name": "FLIGHT",
-                                "description": "DEPARTURE_DESTINATION_DATE_ID",
-                                "unit_amount": {
-                                    "currency_code": "USD",
-                                    "value": "90.00"
-                                },
-                                "quantity": "1"
-                            }
-                        ],
+                        "amount": {
+                            "currency_code": "USD",
+                            "value": ticket_price_dollars
+                        },
                     }
                 ]
             }
@@ -110,6 +105,5 @@ class CaptureOrder(PayPalClient):
         return response
 
 
-paypal_client = PayPalClient()
-create_order = CreateOrder(paypal_client)
-capture_order = CaptureOrder(paypal_client)
+create_order = CreateOrder()
+capture_order = CaptureOrder()
