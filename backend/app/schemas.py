@@ -1,9 +1,6 @@
 from typing import List, Optional
-
 from datetime import datetime
-
 from pydantic import BaseModel
-
 import uuid
 
 # JWT
@@ -85,16 +82,30 @@ class User(UserBase):
 class UserLogin(User):
     hashed_password: str
 
-
-class UserCreate(UserBase):
-    password: str
-
-
-# Email verification entry
-class EmailVerificationEntry(BaseModel):
+class EmailVerificationEntryBase(BaseModel):
     email: str
+
+class EmailVerificationEntry(EmailVerificationEntryBase):
     verification_code: int
     created: datetime
 
     class Config:
         orm_mode = True
+
+
+# -----------------------------------------------------------------------------
+class EmailVerification(BaseModel):
+    email: str
+    action: str
+
+class RegisterData(BaseModel):
+    email: str
+    first_name: str
+    last_name: str
+    password: str
+    verification_code: int
+
+class LoginData(BaseModel):
+    email: str
+    password: str
+    verification_code: int
