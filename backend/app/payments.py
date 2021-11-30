@@ -49,7 +49,7 @@ class PayPalClient:
         return isinstance(data, str) or isinstance(data, int)
 
 
-class CreateOrder():
+class CreateOrder(PayPalClient):
 
     # 2. Set up your server to receive a call from the client
     """ This is the sample function to create an order. It uses the
@@ -68,6 +68,8 @@ class CreateOrder():
     @staticmethod
     def build_request_body(flight: schemas.Flight, user: schemas.User):
         """Method to create body with CAPTURE intent"""
+
+        ticket_price_dollars = flight.ticket_price_dollars
         return \
             {
                 "intent": "CAPTURE",
@@ -79,23 +81,16 @@ class CreateOrder():
                 },
                 "purchase_units": [
                     {
-                        "items": [
-                            {
-                                "name": "FLIGHT",
-                                "description": "DEPARTURE_DESTINATION_DATE_ID",
-                                "unit_amount": {
-                                    "currency_code": "USD",
-                                    "value": "90.00"
-                                },
-                                "quantity": "1"
-                            }
-                        ],
+                        "amount": {
+                            "currency_code": "USD",
+                            "value": ticket_price_dollars
+                        },
                     }
                 ]
             }
 
 
-class CaptureOrder():
+class CaptureOrder(PayPalClient):
 
     # 2. Set up your server to receive a call from the client
     """this sample function performs payment capture on the order.

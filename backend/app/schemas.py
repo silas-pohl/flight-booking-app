@@ -121,3 +121,9 @@ class LoginData(BaseModel):
     email: str
     password: str
     verification_code: int
+
+# -----------------------------------------------------------------------------
+
+
+class OrderID(BaseModel):
+    order_id: str

@@ -229,17 +229,14 @@ async def cancel_flight(data: schemas.TicketID, current_user: schemas.User = Dep
 
 # Experimental
 @app.post("/order")
-async def create_order(flight_id: uuid.UUID, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
-    departure_airport_id = uuid.uuid4()
-    destination_airport_id = uuid.uuid4()
-    departure_time_utc = datetime.now()
-    arrival_time_utc = datetime.now()
-    ticket_price_dollars = 1.2
-    seats = 3
-    id = uuid.uuid4
-    flight = schemas.Flight(departure_airport_id, destination_airport_id,
-                            departure_time_utc, arrival_time_utc, ticket_price_dollars, seats, id)
+async def create_order(data: schemas.FlightID, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
+    flight = crud.get_flight(db=db, flight_id=data.flight_id)
     return payments.create_order.create_order(flight=flight, user=current_user)
+
+
+@app.post("/capture")
+async def capture_order(data: schemas.OrderID, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
+    return payments.capture_order.capture_order(data.order_id)
 
 
 @app.post("/exampleentities")
