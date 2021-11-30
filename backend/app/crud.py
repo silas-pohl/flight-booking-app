@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 import typing
 import uuid
 import sqlalchemy
-from sqlalchemy.orm import Session, session
+from sqlalchemy.orm import Session
 from sqlalchemy.sql.functions import mode
 
 from fastapi import HTTPException, status
@@ -91,7 +91,7 @@ def get_user_tickets(db: Session, user_id: uuid.UUID, skip: int = 0, limit: int 
         .offset(skip).limit(limit).all()
 
 
-def create_user_ticket(db: Session,  user_id: uuid.UUID, ticket_flight_id: uuid.UUID, created: datetime):
+def create_user_ticket(db: Session, user_id: uuid.UUID, ticket_flight_id: uuid.UUID, created: datetime):
     db_ticket = models.Ticket(
         owner_id=user_id, flight_id=ticket_flight_id, created=created)
     db.add(db_ticket)
