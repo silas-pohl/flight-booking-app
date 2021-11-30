@@ -26,7 +26,7 @@ def get_users(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.User).offset(skip).limit(limit).all()
 
 
-def create_user(db: Session, user: schemas.UserCreate):
+def create_user(db: Session, user: schemas.RegisterData):
     psw_hash = auth.get_password_hash(user.password)
     db_user = models.User(email=user.email, hashed_password=psw_hash, first_name=user.first_name,
                           last_name=user.last_name, is_admin=False)
@@ -96,8 +96,7 @@ def create_user_ticket(db: Session, ticket: schemas.Ticket, user_id: uuid.UUID, 
 
 
 def create_verification_entry(db: Session, email: str, verification_code: int, created: datetime):
-    db_verification_entry = models.VerificationEntry(
-        email, verification_code, created)
+    db_verification_entry = models.VerificationEntry(email=email, verification_code=verification_code, created=created)
     db.add(db_verification_entry)
     db.commit()
     db.refresh(db_verification_entry)
@@ -108,8 +107,8 @@ def get_verification_entry(db: Session, email: str):
         db_verification_entry = db.query(models.VerificationEntry)\
             .filter(models.VerificationEntry.email == email).one()
         return db_verification_entry
-    except sqlalchemy.exc.NoResultFound as nrf:
-        raise not_found_exception from nrf
+    except sqlalchemy.exc.NoResultFound:
+        return None
 
 
 def delete_verification_entry(db: Session, email: str):

@@ -5,6 +5,8 @@ from sqlalchemy.sql.sqltypes import FLOAT, TIMESTAMP
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
 
+from backend.app.main import verificationcode
+
 from .database import Base
 
 
@@ -60,10 +62,11 @@ class Ticket(Base):
     owner = relationship("User", foreign_keys=[owner_id])
     flight = relationship("Flight", foreign_keys=[flight_id])
 
+class VerificationRecord(Base):
+    __tablename__ = "verification_records"
 
-class VerificationEntry(Base):
-    __tablename__ = "verification_entries"
-
-    email = Column(String, primary_key=True, index=True)
-    verfication_code = Column(Integer)
+    id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
+    email = Column(String)
+    verificationcode = Column(Integer)
+    action = Column(String)
     created = Column(TIMESTAMP)

@@ -3,7 +3,8 @@ import psycopg2
 import os
 import re
 from random import SystemRandom
-from datetime import timedelta
+from datetime import timedelta, datetime
+from sqlalchemy.sql.sqltypes import DateTime
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,49 +20,107 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5000",
-        "https://frontend-flight-booking-app.herokuapp.com/"
-    ],
+    allow_origins=["http://localhost:5000", "https://frontend-flight-booking-app.herokuapp.com/"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # Dependency
-
-
 def get_db():
     db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+    try: yield db
+    finally: db.close()
 
-@app.post("/emailtoken")
-def emailtoken(email: str, db: Session = Depends(get_db)):
+@app.post("/verficationcode")
+def verificationcode(data: schemas.EmailVerification, db: Session = Depends(get_db)) -> schemas.EmailVerification:
+    '''Send verification code to email adress to authorize respective action'''
+
+    # Validate request data
+    regex: re.RegexFlag = re.compile(r"([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+")
+    if not (re.fullmatch(regex, data.email)) or (data.action not in ["register", "login", "reset"]): 
+        raise HTTPException(status_code=422, detail="Invalid request data")
+
+    # Check if email already exists for register or not exists for login and reset
+    if data.action == "register" and crud.read_user_by_email(db, data.email):
+        raise HTTPException(status_code=409, detail="Email already registered")
+    elif data.action in ["login", "reset"] and crud.read_user_by_email(db, data.email) is None:
+        raise HTTPException(status_code=404, detail="Email not registered")
+
+    # Delete all records older than 5mins from verification_records table
+    crud.delete_verification_records(db, timedelta(minutes=5))
+
+    # Check if verification_code in verification_codes table or needs to be generated and stored
+    verification_record = crud.read_verification_record(db, data.email, data.action)
+    if (verification_record):
+        verification_code = verification_record.verification_code
+        crud.update_verification_record(db, data.email, data.action, verification_code, datetime.now())
+    else:
+        verification_code = SystemRandom().randint(100000, 999999)
+        crud.create_verification_record(db, data.email, data.action, verification_code, datetime.now())
+
+    # Send mail with verification token and mirror request data
+    mail.send_verification_code(data.email, verification_code)
+    return data
+
+'''
+@app.post("/verificationcode", response_model=schemas.EmailVerificationEntryBase)
+def verificationcode(data: schemas.EmailVerificationEntryBase, db: Session = Depends(get_db)):
+
+    email: str = data.email
 
     # Validation
-    regex: str = '^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/'
-    if (re.search(regex, email)): raise HTTPException(status_code=422, detail="Invalid email")
-    if (crud.get_user_by_email(db, email=email)): raise HTTPException(status_code=409, detail="Email already registered")
+    regex: re.RegexFlag = re.compile(r"([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+")
+    if not (re.fullmatch(regex, email)): 
+        raise HTTPException(status_code=422, detail="Invalid email")
+
+    # Check if email already registered
+    if (crud.get_user_by_email(db, email=email)): 
+        raise HTTPException(status_code=409, detail="Email already registered")
     
-    # Check if token already generated and send email
-    verification_code: str = crud.get_verification_entry(db, email=email)
-    if (verification_code): 
-        mail.send_token(email, verification_code)
-        return {"email": email}
+    # Check if token needs to be generated
+    verification_entry = crud.get_verification_entry(db, email=email)
+    if not (verification_entry): 
+        verification_code = SystemRandom().randrange(10000000, 99999999)
+        crud.create_verification_entry(db, email=email, verification_code=verification_code, created=datetime.now())
+        #TODO Async delete email token after 5min
+    else:
+        verification_code = verification_entry.verification_code
 
-    # Generate token, write to db and send email
-    verification_code: int = SystemRandom().randrange(10000000, 99999999)
-    crud.create_verification_entry(db, email=email, verification_code=verification_code)
-    #TODO Async delete email token after 5min
-    mail.send_token(email, verification_code)
-    return {"email": email}
+    # Send mail with verification token
+    mail.send_verification_code(email, verification_code)
+    return data
+'''
 
-@app.post("/register")
+@app.post("/register", response_model=schemas.RegisterData, status_code=201)
+def register(data:  schemas.RegisterData, db: Session = Depends(get_db)):
 
-@app.post("/login")
+    # Check if input data is not valid
+    mail_regex: re.RegexFlag = re.compile(r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+')
+    pw_regex: re.RegexFlag = re.compile(r'(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[\W]).{12,}')
+    if (
+        len(data.first_name) < 2 or
+        len(data.last_name) < 2 or
+        not (re.fullmatch(mail_regex, data.email)) or
+        not (re.fullmatch(pw_regex, data.password)) or
+        len(str(data.verification_code)) != 8
+    ): 
+        raise HTTPException(status_code=422, detail="Invalid register data")
+
+    # Check if email already registered
+    if (crud.get_user_by_email(db, email=data.email)): 
+        raise HTTPException(status_code=409, detail="Email already registered")
+
+    # Check if email and verificaion_code not match
+    verification_entry = crud.get_verification_entry(db, email=data.email)
+    if not (verification_entry) or data.verification_code != verification_entry.verification_code:
+        raise HTTPException(status_code=403, detail="Wrong email or verifiction token")
+
+    # Create user
+    crud.create_user(db=db, user=data)
+    return data
+
+#@app.post("/login")
 
 # Register endpoint (works)
 
@@ -92,13 +151,13 @@ def emailtoken(email: str, db: Session = Depends(get_db)):
 #    return {"access_token": access_token, "token_type": "bearer"}
 
 
-def authenticate_user(email: str, password: str, db: Session):
-    user = crud.get_user_by_email(db, email=email)
-    if not user:
-        return False
-    if not auth.verify_password(password, user.hashed_password):
-        return False
-    return user
+#def authenticate_user(email: str, password: str, db: Session):
+#    user = crud.get_user_by_email(db, email=email)
+#    if not user:
+#        return False
+#    if not auth.verify_password(password, user.hashed_password):
+#        return False
+#    return user
 
 
 # Routes
