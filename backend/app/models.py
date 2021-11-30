@@ -5,8 +5,6 @@ from sqlalchemy.sql.sqltypes import FLOAT, TIMESTAMP
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
 
-from backend.app.main import verificationcode
-
 from .database import Base
 
 
@@ -69,6 +67,6 @@ class VerificationRecord(Base):
     id = Column(UUID(as_uuid=True), primary_key=True,
                 index=True, default=uuid.uuid4)
     email = Column(String)
-    verificationcode = Column(Integer)
     action = Column(String)
+    verification_code = Column(Integer)
     created = Column(TIMESTAMP)
