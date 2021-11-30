@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import timedelta, datetime
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
@@ -114,9 +114,18 @@ async def cancel_flight(ticket_id: uuid.UUID, current_user: schemas.User = Depen
     pass
 
 
-@app.post("/pay")
-async def make_payment():
-    pass
+@app.post("/order")
+async def create_order(fligth_id: uuid.UUID, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
+    departure_airport_id = uuid.uuid4()
+    destination_airport_id = uuid.uuid4()
+    departure_time_utc = datetime.now()
+    arrival_time_utc = datetime.now()
+    ticket_price_dollars = 1.2
+    seats = 3
+    id = uuid.uuid4
+    flight = schemas.Flight(departure_airport_id, destination_airport_id,
+                            departure_time_utc, arrival_time_utc, ticket_price_dollars, seats, id)
+    return payments.create_order.create_order(flight=flight, user=current_user)
 
 # Admin Routes
 

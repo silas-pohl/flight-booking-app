@@ -1,6 +1,7 @@
 from paypalcheckoutsdk.core import PayPalHttpClient, SandboxEnvironment
-from paypalcheckoutsdk.orders import OrdersCreateRequest
-from paypalhttp import HttpError
+from paypalcheckoutsdk.orders import OrdersCreateRequest, OrdersCaptureRequest
+
+from . import schemas, crud
 
 import os
 
@@ -21,46 +22,94 @@ class PayPalClient:
             credentials have access. """
         self.client = PayPalHttpClient(self.environment)
 
+    def object_to_json(self, json_data):
+        """
+        Function to print all json data in an organized readable manner
+        """
+        result = {}
+        itr = json_data.__dict__.items()
+        for key, value in itr:
+            # Skip internal attributes.
+            if key.startswith("__"):
+                continue
+            result[key] = self.array_to_json_array(value) if isinstance(value, list) else\
+                self.object_to_json(value) if not self.is_primittive(value) else\
+                value
+        return result
 
-def MakeOrder():
-    request = OrdersCreateRequest()
+    def array_to_json_array(self, json_array):
+        result = []
+        if isinstance(json_array, list):
+            for item in json_array:
+                result.append(self.object_to_json(item) if not self.is_primittive(item)
+                              else self.array_to_json_array(item) if isinstance(item, list) else item)
+        return result
 
-    request.prefer('return=representation')
+    def is_primittive(self, data):
+        return isinstance(data, str) or isinstance(data, int)
 
-    request.request_body(
-        {
-            "intent": "CAPTURE",
-            "purchase_units": [
-                {
-                    "amount": {
-                        "currency_code": "USD",
-                        "value": "100.00"
+
+class CreateOrder(PayPalClient):
+
+    # 2. Set up your server to receive a call from the client
+    """ This is the sample function to create an order. It uses the
+      JSON body returned by buildRequestBody() to create an order."""
+
+    def create_order(self, flight: schemas.Flight, user: schemas.User):
+        request = OrdersCreateRequest()
+        request.prefer('return=representation')
+        # 3. Call PayPal to set up a transaction
+        request.request_body(self.build_request_body(flight=flight, user=user))
+        response = self.client.execute(request)
+        return response
+
+    """Setting up the JSON request body for creating the order. Set the intent in the
+    request body to "CAPTURE" for capture intent flow."""
+    @staticmethod
+    def build_request_body(flight: schemas.Flight, user: schemas.User):
+        """Method to create body with CAPTURE intent"""
+        return \
+            {
+                "intent": "CAPTURE",
+                "application_context": {
+                    "brand_name": "Flight Booking App",
+                    "landing_page": "LOGIN",
+                    "shipping_preference": "NO_SHIPPING",
+                    "user_action": "PAY_NOW"
+                },
+                "purchase_units": [
+                    {
+                        "items": [
+                            {
+                                "name": "FLIGHT",
+                                "description": "DEPARTURE_DESTINATION_DATE_ID",
+                                "unit_amount": {
+                                    "currency_code": "USD",
+                                    "value": "90.00"
+                                },
+                                "quantity": "1"
+                            }
+                        ],
                     }
-                }
-            ]
-        }
-    )
+                ]
+            }
 
-    try:
-        # Call API with your client and get a response for your call
-        paypal_client = PayPalClient()
-        response = paypal_client.client.execute(request)
-        print('Order With Complete Payload:')
-        print('Status Code:', response.status_code)
-        print('Status:', response.result.status)
-        print('Order ID:', response.result.id)
-        print('Intent:', response.result.intent)
-        print('Links:')
-        for link in response.result.links:
-            print('\t{}: {}\tCall Type: {}'.format(
-                link.rel, link.href, link.method))
-            print('Total Amount: {} {}'.format(response.result.purchase_units[0].amount.currency_code,
-                                               response.result.purchase_units[0].amount.value))
-            # If call returns body in response, you can get the deserialized version from the result attribute of the response
-            order = response.result
-            print(order)
-    except IOError as ioe:
-        print(ioe)
-        if isinstance(ioe, HttpError):
-            # Something went wrong server-side
-            print(ioe.status_code)
+
+class CaptureOrder(PayPalClient):
+
+    # 2. Set up your server to receive a call from the client
+    """this sample function performs payment capture on the order.
+    Approved order ID should be passed as an argument to this function"""
+
+    def capture_order(self, order_id):
+        """Method to capture order using order_id"""
+        request = OrdersCaptureRequest(order_id)
+        # 3. Call PayPal to capture an order
+        response = self.client.execute(request)
+        # 4. Save the capture ID to your database. Implement logic to save capture to your database for future reference.
+        return response
+
+
+paypal_client = PayPalClient()
+create_order = CreateOrder(paypal_client)
+capture_order = CaptureOrder(paypal_client)
