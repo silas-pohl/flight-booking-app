@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime
 import uuid
 import sqlalchemy
 from sqlalchemy.orm import Session
@@ -95,23 +95,30 @@ def create_user_ticket(db: Session, ticket: schemas.Ticket, user_id: uuid.UUID, 
     return db_ticket
 
 
-def create_verification_entry(db: Session, email: str, verification_code: int, created: datetime):
-    db_verification_entry = models.VerificationEntry(email=email, verification_code=verification_code, created=created)
+def create_verification_record(db: Session, email: str, verification_code: int, action: str, created: datetime.datetime):
+    db_verification_entry = models.VerificationRecord(
+        email=email, verification_code=verification_code, action=action, created=created)
     db.add(db_verification_entry)
     db.commit()
     db.refresh(db_verification_entry)
 
 
-def get_verification_entry(db: Session, email: str):
+def get_verification_record(db: Session, email: str):
     try:
-        db_verification_entry = db.query(models.VerificationEntry)\
+        db_verification_entry = db.query(models.VerificationRecord)\
             .filter(models.VerificationEntry.email == email).one()
         return db_verification_entry
     except sqlalchemy.exc.NoResultFound:
         return None
 
 
-def delete_verification_entry(db: Session, email: str):
-    db.query(models.VerificationEntry).filter(
-        models.VerificationEntry.email == email).delete()
+def delete_expired_verification_records(db: Session, maximum_age: datetime.timedelta, now: datetime.datetime):
+    db.query(models.VerificationRecord).filter(
+        now - models.VerificationRecord.created > maximum_age).delete()
+    db.commit()
+
+
+def delete_verification_record(db: Session, email: str):
+    db.query(models.VerificationRecord).filter(
+        models.VerificationRecord.email == email).delete()
     db.commit()

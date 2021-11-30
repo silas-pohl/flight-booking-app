@@ -62,10 +62,12 @@ class Ticket(Base):
     owner = relationship("User", foreign_keys=[owner_id])
     flight = relationship("Flight", foreign_keys=[flight_id])
 
+
 class VerificationRecord(Base):
     __tablename__ = "verification_records"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
+    id = Column(UUID(as_uuid=True), primary_key=True,
+                index=True, default=uuid.uuid4)
     email = Column(String)
     verificationcode = Column(Integer)
     action = Column(String)
