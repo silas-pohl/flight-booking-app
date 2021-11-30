@@ -10,7 +10,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from . import crud, models, schemas, auth, mail
+from . import crud, models, schemas, auth, mail, payments
 import uuid
 from .database import SessionLocal, engine
 
@@ -186,7 +186,22 @@ async def cancel_flight(ticket_id: uuid.UUID, current_user: schemas.User = Depen
     pass
 
 
+@app.post("/order")
+async def create_order(fligth_id: uuid.UUID, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
+    departure_airport_id = uuid.uuid4()
+    destination_airport_id = uuid.uuid4()
+    departure_time_utc = datetime.now()
+    arrival_time_utc = datetime.now()
+    ticket_price_dollars = 1.2
+    seats = 3
+    id = uuid.uuid4
+    flight = schemas.Flight(departure_airport_id, destination_airport_id,
+                            departure_time_utc, arrival_time_utc, ticket_price_dollars, seats, id)
+    return payments.create_order.create_order(flight=flight, user=current_user)
+
 # Admin Routes
+
+
 @app.get("/users")
 async def get_all_users(current_user: schemas.User = Depends(auth.get_current_active_admin_user), db: Session = Depends(get_db)):
     return crud.get_users(db)
