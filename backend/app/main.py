@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 import uuid
-from . import crud, models, schemas, auth
+from . import crud, models, schemas, auth, payments
 from .database import SessionLocal, engine
 
 models.Base.metadata.create_all(bind=engine)
@@ -114,7 +114,13 @@ async def cancel_flight(ticket_id: uuid.UUID, current_user: schemas.User = Depen
     pass
 
 
+@app.post("/pay")
+async def make_payment():
+    pass
+
 # Admin Routes
+
+
 @app.get("/users")
 async def get_all_users(current_user: schemas.User = Depends(auth.get_current_active_admin_user), db: Session = Depends(get_db)):
     return crud.get_users(db)
