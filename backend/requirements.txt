@@ -7,3 +7,4 @@ passlib
 python-multipart
 sqlalchemy
 paypal-checkout-serversdk
+pytest
