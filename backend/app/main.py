@@ -135,9 +135,8 @@ def login(data: schemas.LoginData, db: Session = Depends(get_db)):
 # Login endpoint
 
 @app.post("/token", response_model=schemas.Token)
-async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
-    db = get_db()
-    user = authenticate_user(form_data.username, form_data.password, next(db))
+async def login_for_access_token(form_data: schemas.TokenLogin, db: Session = Depends(get_db)):
+    user = authenticate_user(form_data.username, form_data.password, db)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -151,7 +150,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-def authenticate_user(email: str, password: str, db: Session):
+def authenticate_user(email: str, password: str, db: Session = Depends(get_db)):
     user = crud.read_user_by_email(db, email=email)
     if not user:
         return False

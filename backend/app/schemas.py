@@ -104,6 +104,11 @@ class EmailVerificationEntry(EmailVerificationEntryBase):
 
 
 # -----------------------------------------------------------------------------
+class TokenLogin(BaseModel):
+    username: str
+    password: str
+
+
 class EmailVerification(BaseModel):
     email: str
     action: str
