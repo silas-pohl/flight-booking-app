@@ -1,8 +1,9 @@
 from datetime import datetime
 from fastapi.testclient import TestClient
-
-from app import main, crud, schemas, mail
+from sqlalchemy.orm import Session
 from unittest import mock
+from app import main, crud, schemas, mail
+
 import pytest
 
 
@@ -18,6 +19,10 @@ def get_test_user():
         is_active=True,
         is_admin=False
     )
+
+
+def get_access_token():
+    return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJwYXltZW50cy5mbGlnaHQuYm9va2luZ0BnbWFpbC5jb20iLCJhZG1pbiI6ZmFsc2UsImV4cCI6MTYzODU1MDI4N30.pcjYDatsOw7rtbOl36s0aruAaKwl6dWYPHrxR94iI-A"
 
 
 def get_test_verification_entry():
@@ -267,3 +272,41 @@ def test_register_invalid_verification_code(mock_crud, mock_get_db):
     assert response_register.status_code == 403
     assert response_register.json() == {
         "detail": "Incorrect verification code"}
+
+
+@mock.patch("app.main.get_db")
+@mock.patch("app.main.auth.create_access_token")
+@mock.patch("app.main.authenticate_user")
+def test_token_valid_login(mock_authenticate_user, mock_create_access_token, mock_get_db):
+    mock_authenticate_user.return_value = get_test_user()
+    mock_create_access_token.return_value = get_access_token()
+
+    access_token = get_access_token()
+    valid_username = get_valid_test_email()
+    valid_password = get_valid_password()
+
+    response_token = client.post(
+        "/token", json={"username": valid_username, "password": valid_password
+                        })
+
+    assert response_token.status_code == 200
+    assert response_token.json() == {
+        "access_token": access_token, "token_type": "bearer"}
+
+
+@mock.patch("app.main.get_db")
+@mock.patch("app.main.authenticate_user")
+def test_token_non_matching_credentials(mock_authenticate_user, mock_get_db):
+    mock_authenticate_user.return_value = None
+
+    valid_username = get_valid_test_email()
+    valid_password = get_valid_password()
+
+    response_token = client.post(
+        "/token", json={"username": valid_username, "password": valid_password
+                        })
+
+    assert response_token.status_code == 401
+    assert response_token.headers["WWW-Authenticate"] == "Bearer"
+    assert response_token.json() == {
+        "detail": "Incorrect email or password"}
