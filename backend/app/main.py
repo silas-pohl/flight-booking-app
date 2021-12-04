@@ -141,7 +141,7 @@ async def login_for_access_token(data: schemas.TokenLogin, db: Session = Depends
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-def authenticate_user(email: str, password: str, db: Session = Depends(get_db)):
+def authenticate_user(email: str, password: str, db: Session):
     user = crud.read_user_by_email(db, email=email)
     if not user:
         return False
