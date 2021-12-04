@@ -91,11 +91,9 @@ def register(data: schemas.RegisterData, db: Session = Depends(get_db)):
         raise HTTPException(status_code=422, detail="Invalid request data")
 
     # Check if email and verificaion code not match
-    verification_record = crud.read_verification_record(
-        db, data.email, 'register')
-    if not (verification_record) or data.verification_code != verification_record.verification_code:
-        raise HTTPException(
-            status_code=403, detail="Incorrect verification code")
+    verification_record = crud.read_verification_record(db, data.email, 'register')
+    if not (verification_record) or int(data.verification_code) != verification_record.verification_code:
+        raise HTTPException(status_code=403, detail="Incorrect verification code")
 
     # Create user, delete verification record and mirror request data
     crud.create_user(db, data.email, data.password,
@@ -103,38 +101,7 @@ def register(data: schemas.RegisterData, db: Session = Depends(get_db)):
     crud.delete_verification_record(db, data.email, 'register')
     return data
 
-
-"""
-@app.post('/login', response_model=schemas.LoginData)
-def login(data: schemas.LoginData, db: Session = Depends(get_db)):
-    '''Login user if verification code is valid'''
-
-    # Validate request data???
-
-    # Check if email and verificaion code not match
-    verification_record = crud.read_verification_record(db, data.email, 'login')
-    if not (verification_record) or data.verification_code != verification_record.verification_code:
-        raise HTTPException(status_code=403, detail="Incorrect verification code")
-
-    user = crud.read_user_by_email(db, data.email)
-    if not user or :
-        raise HTTPException(status_code=403, detail="Incorrect email or password")
-    return data
-"""
-
-# Register endpoint (works)
-
-# @app.post("/users/", response_model=schemas.User)
-# def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-#    db_user = crud.get_user_by_email(db, email=user.email)
-#    if db_user:
-#        raise HTTPException(status_code=400, detail="Email already registered")
-#    return crud.create_user(db=db, user=user)
-
-
-# Login endpoint
-
-@app.post("/token", response_model=schemas.Token)
+@app.post("/login", response_model=schemas.Token)
 async def login_for_access_token(form_data: schemas.TokenLogin, db: Session = Depends(get_db)):
     user = authenticate_user(form_data.username, form_data.password, db)
     if not user:
