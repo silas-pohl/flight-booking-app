@@ -11,6 +11,7 @@ import pytest
 client = TestClient(main.app)
 
 
+# test objects for mocking
 def get_test_user():
     return schemas.User(
         email="test@test.test",
@@ -137,6 +138,7 @@ def get_flight():
     }
 
 
+# test exceptions for mocking
 def raise_http_401_could_not_validate_credentials():
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -169,9 +171,10 @@ def get_http_422_invalid_id_format(id_type: str):
         }
     ])
 
+
+# Endpoint unit tests
+
 # /verificationcode
-
-
 @pytest.mark.parametrize("verification_entry", [(get_test_verification_entry()), (None)])
 @mock.patch("app.main.mail.send_verification_code")
 @mock.patch("app.main.crud")
@@ -367,9 +370,8 @@ def test_register_invalid_verification_code(mock_crud):
     assert response_register.json() == {
         "detail": "Incorrect verification code"}
 
+
 # /token
-
-
 @mock.patch("app.main.auth.create_access_token")
 @mock.patch("app.main.authenticate_user")
 def test_token_valid_login(mock_authenticate_user, mock_create_access_token):
@@ -405,9 +407,8 @@ def test_token_non_matching_credentials(mock_authenticate_user):
     assert response_token.json() == {
         "detail": "Incorrect email or password"}
 
+
 # /me
-
-
 def test_me():
 
     user = get_test_user()
