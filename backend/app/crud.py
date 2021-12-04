@@ -73,6 +73,10 @@ def delete_flight(db: Session, flight_id: uuid.UUID):
     return flight_id
 
 
+def get_booked_tickets_number(db: Session, flight_id: uuid.UUID):
+    return db.query(models.Ticket).filter(models.Ticket.flight_id == flight_id).count()
+
+
 def get_user_ticket(db: Session, user_id: uuid.UUID, ticket_id: uuid.UUID):
     try:
         return db.query(models.Ticket)\
@@ -87,16 +91,25 @@ def get_user_tickets(db: Session, user_id: uuid.UUID, skip: int = 0, limit: int 
         .offset(skip).limit(limit).all()
 
 
-def create_user_ticket(db: Session, ticket: schemas.Ticket, user_id: uuid.UUID, ticket_flight_id: uuid.UUID):
+def create_user_ticket(db: Session, user_id: uuid.UUID, ticket_flight_id: uuid.UUID, created: datetime):
     db_ticket = models.Ticket(
-        **ticket.dict(), owner_id=user_id, flight_id=ticket_flight_id)
+        owner_id=user_id, flight_id=ticket_flight_id, created=created)
     db.add(db_ticket)
     db.commit()
     db.refresh(db_ticket)
     return db_ticket
 
+
+def delete_user_ticket(db: Session, user_id: uuid.UUID, ticket_id: uuid.UUID):
+    db.query(models.Ticket).filter(models.Ticket.id == ticket_id,
+                                   models.Ticket.owner_id == user_id).delete()
+    db.commit()
+    return ticket_id
+
 # ----------------------------------------------------------------------------------------------------------------------
 # VERIFICATION RECORDS
+
+
 def create_verification_record(db: Session, email: str, action: str, verification_code: int, created: datetime):
     db_verification_record = models.VerificationRecord(
         email=email, action=action, verification_code=verification_code, created=created
@@ -104,6 +117,7 @@ def create_verification_record(db: Session, email: str, action: str, verificatio
     db.add(db_verification_record)
     db.commit()
     db.refresh(db_verification_record)
+
 
 def read_verification_record(db: Session, email: str, action: str):
     try:
@@ -113,10 +127,12 @@ def read_verification_record(db: Session, email: str, action: str):
     except sqlalchemy.exc.NoResultFound:
         return None
 
+
 def delete_verification_record(db: Session, email: str, action: str):
     db.query(models.VerificationRecord)\
         .filter(models.VerificationRecord.email == email, models.VerificationRecord.action == action).delete()
     db.commit()
+
 
 def delete_expired_verification_records(db: Session, maximum_age: timedelta):
     db.query(models.VerificationRecord)\
