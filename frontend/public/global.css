@@ -6,3 +6,6 @@ body {
     align-items: center;
     background-color: #f4f4f4 !important;
 }
+#bx--modal-body--verification-code-modal {
+    margin-bottom: 0;
+}

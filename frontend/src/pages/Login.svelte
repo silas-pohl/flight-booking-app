@@ -1,72 +1,74 @@
 <script lang="ts">
+    //-------------------------------------------------------------------------------------------------
+    // Imports
     import { Button, Form, InlineNotification, TextInput } from "carbon-components-svelte";
     import ArrowRight32 from "carbon-icons-svelte/lib/ArrowRight32";
-    import { authNotification } from "../lib/store";
 
-    let loginData: LoginData = { email: "", password: "" };
-    let emailError: string = "";
-    let passwordError: string = "";
+    //-------------------------------------------------------------------------------------------------
+    // Variables and Constants
+    let email: string, password: string;
+    let email_error: string, password_error: string;
+    let notification: AuthNotification = { kind: "info", title: "", subtitle: "" };
 
-    const validateEmail = (): void => { emailError = loginData.email.length > 0 ? "" : "Email is required." };
-    const validatePassword = (): void => { passwordError = loginData.password.length > 0 ? "" : "Password is required." };
-    const validateForm = (): void => { validateEmail(); validatePassword(); if (!(emailError || passwordError)) login(loginData);};
+    //-------------------------------------------------------------------------------------------------
+    // Login Form Validation
+    const check_email = (): void => { 
+        email_error = email.length > 0 ? "" : "Email is required." 
+    };
+    const check_password = (): void => { 
+        password_error = password.length > 0 ? "" : "Password is required." 
+    };
+    const check_form = (): void => { 
+        check_email(); check_password(); 
+        if (!(email_error || password_error)) { login() };
+    };
 
-    const login = (data: LoginData): void => {
-        $authNotification = ({ "kind": "error", "title": "Login failed.", "subtitle": "Invalid email or password." });
+    //-------------------------------------------------------------------------------------------------
+    // Endpoint calls
+    const login = (): void => {
+        console.log(email, password);
     }
 </script>
 
 <div id="card">
     <img src="images/logo.svg" alt="The Flight Booking Company" style="position: relative; left: 10%; width: 80%;"/>
-
-    <Form on:submit={validateForm}>
-
+    <Form on:submit={check_form}>
         <TextInput
-            bind:value={loginData.email}
-            on:change={validateEmail}
+            bind:value={email}
+            on:change={check_email}
             labelText="Enter Email"
-            invalid={Boolean(emailError)}
-            invalidText={emailError}
+            invalid={Boolean(email_error)}
+            invalidText={email_error}
         />
-        {#if Boolean(emailError)}
-            <div style="margin-bottom: 1rem;"/>
-        {:else}
-            <div style="margin-bottom: calc(1rem + 20px);"/>
-        {/if}
-
+        {#if Boolean(email_error)} <div style="margin-bottom: 1rem;"/> {:else} <div style="margin-bottom: calc(1rem + 20px);"/> {/if}
         <TextInput
-            bind:value={loginData.password}
-            on:change={validatePassword}
+            bind:value={password}
+            on:change={check_password}
             labelText="Enter Password"
             type="password"
-            invalid={Boolean(passwordError)}
-            invalidText={passwordError}
+            invalid={Boolean(password_error)}
+            invalidText={password_error}
         />
-        {#if Boolean(passwordError)}
-            <div style="margin-bottom: 1rem;"/>
-        {:else}
-            <div style="margin-bottom: calc(1rem + 20px);"/>
-        {/if}
-
-        {#if $authNotification.title !== ""}
-        <InlineNotification
-            kind={$authNotification.kind}
-            title={$authNotification.title}
-            subtitle={$authNotification.subtitle}
-            on:close={() => $authNotification = {"kind": "info", "title": "", "subtitle": ""}}
+        {#if Boolean(password_error)} <div style="margin-bottom: 1rem;"/> {:else} <div style="margin-bottom: calc(1rem + 20px);"/> {/if}
+        {#if notification.title !== ""}
+        <InlineNotification 
+            kind={notification.kind} 
+            title={notification.title} 
+            subtitle={notification.subtitle} 
+            on:close={() => notification = {"kind": "info", "title": "", "subtitle": ""}} 
             lowContrast={true}
         />
         {/if}
-
-        <Button style="width: 100%; max-width: 100%; margin-bottom: 1.5rem;"
+        <Button 
+            style="width: 100%; max-width: 100%;"
             kind="primary"
             type="submit"
             icon={ArrowRight32}
         >
             Login
         </Button>
-
-        <div>Don't have an account? <a on:click={() => $authNotification = {"kind": "info", "title": "", "subtitle": ""}} href="/register" tinro-ignore>Register</a></div>
+        <div style="margin-bottom: 1rem;"/>
+        <div>Don't have an account? <a href="/register" tinro-ignore>Register</a></div>
 
     </Form>
 </div>
