@@ -3,6 +3,7 @@
     // Imports
     import { Button, Form, InlineNotification, TextInput } from "carbon-components-svelte";
     import ArrowRight32 from "carbon-icons-svelte/lib/ArrowRight32";
+    import { api_url, access_token } from "../lib/store";
 
     //-------------------------------------------------------------------------------------------------
     // Variables and Constants
@@ -26,7 +27,26 @@
     //-------------------------------------------------------------------------------------------------
     // Endpoint calls
     const login = (): void => {
-        console.log(email, password);
+        fetch($api_url + "/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password })
+        })
+        .then((res: Response) => {
+            if (res.status === 200) { 
+                res.json().then((data: any) => { 
+                    access_token.set(data.access_token);
+                    console.log($access_token);
+                    console.log(data.expires_in);
+                    window.location.href = "/";
+                });
+            }
+            else if (res.status === 401) { notification = { kind: "error", title: "Incorrect email or password.", subtitle: "Please try again." }; }
+            else { notification = { kind: "error", title: "Something went wrong.", subtitle: "Please try again later or contact support." }; }
+        })
+        .catch((err: Error) => {
+            notification = { kind: "error", title: "Something went wrong.", subtitle: "Please try again later or contact support." };
+        });
     }
 </script>
 

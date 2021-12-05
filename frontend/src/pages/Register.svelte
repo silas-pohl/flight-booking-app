@@ -92,7 +92,6 @@
         });
     }
     const register = (): void => {
-        console.log(verification_code)
         fetch("http://localhost:80/register", {
             method: "POST",
             headers: { "Content-Type": "application/json" },

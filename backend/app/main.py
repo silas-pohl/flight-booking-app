@@ -5,7 +5,7 @@ import re
 from random import SystemRandom
 from datetime import timedelta, datetime
 from sqlalchemy.sql.sqltypes import DateTime
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, status, Response
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -102,8 +102,8 @@ def register(data: schemas.RegisterData, db: Session = Depends(get_db)):
     return data
 
 @app.post("/login", response_model=schemas.Token)
-async def login_for_access_token(form_data: schemas.TokenLogin, db: Session = Depends(get_db)):
-    user = authenticate_user(form_data.username, form_data.password, db)
+async def login(form_data: schemas.TokenLogin, response: Response, db: Session = Depends(get_db)):
+    user = authenticate_user(form_data.email, form_data.password, db)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -114,7 +114,8 @@ async def login_for_access_token(form_data: schemas.TokenLogin, db: Session = De
     access_token = auth.create_access_token(
         data={"sub": user.email, "admin": user.is_admin}, expires_delta=access_token_expires
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    response.set_cookie(key="refresh_token", value="temp", httponly=True)
+    return {"access_token": access_token, "token_type": "bearer", "expires_in": auth.ACCESS_TOKEN_EXPIRE_MINUTES*60*1000}
 
 
 def authenticate_user(email: str, password: str, db: Session = Depends(get_db)):
@@ -126,8 +127,11 @@ def authenticate_user(email: str, password: str, db: Session = Depends(get_db)):
     return user
 
 
-# Routes
+@app.post("/refreshtoken")
+async def refreshtoken(db: Session = Depends(get_db)):
+    pass
 
+# Routes
 
 @app.get("/me/", response_model=schemas.UserBase)
 async def read_users_me(current_user: schemas.User = Depends(auth.get_current_active_user)):
