@@ -172,7 +172,7 @@ async def get_flight(flight_id: uuid.UUID, current_user: schemas.User = Depends(
     return crud.get_flight(db, flight_id)
 
 
-@app.post("/me/booking")
+@app.post("/me/booking", response_model=schemas.TicketID)
 async def book_flight(data: schemas.FlightID, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
     flight = crud.get_flight(db=db, flight_id=data.flight_id)
     booked_tickets = crud.get_booked_tickets_number(
@@ -180,7 +180,7 @@ async def book_flight(data: schemas.FlightID, current_user: schemas.User = Depen
     if (flight.seats - booked_tickets > 0):
         ticket = crud.create_user_ticket(
             db=db, user_id=current_user.id, flight_id=data.flight_id, created=datetime.now())
-        return {"ticket_id": ticket.id}
+        return schemas.TicketID(ticket_id=ticket.id)
     raise HTTPException(
         status_code=409, detail="No more tickets available for this flight.")
 
@@ -226,6 +226,6 @@ async def create_flight(flight: schemas.FlightBase, current_user: schemas.User =
     return crud.create_flight(db, flight)
 
 
-@app.delete("/flights/{flight_id}", response_model=schemas.Flight)
-async def alter_flight(flight_id: uuid.UUID, current_user: schemas.User = Depends(auth.get_current_active_admin_user), db: Session = Depends(get_db)):
-    return crud.delete_flight(db, flight_id)
+@app.delete("/flights/{flight_id}", response_model=schemas.FlightID)
+async def delete_flight(flight_id: uuid.UUID, current_user: schemas.User = Depends(auth.get_current_active_admin_user), db: Session = Depends(get_db)):
+    return crud.delete_flight(db=db, flight_id=flight_id)

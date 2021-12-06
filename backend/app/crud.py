@@ -70,7 +70,7 @@ def create_flight(db: Session, flight: schemas.FlightBase):
 def delete_flight(db: Session, flight_id: uuid.UUID):
     db.query(models.Flight).filter(models.Flight.id == flight_id).delete()
     db.commit()
-    return flight_id
+    return schemas.FlightID(flight_id=flight_id)
 
 
 def get_booked_tickets_number(db: Session, flight_id: uuid.UUID):
@@ -104,7 +104,7 @@ def delete_user_ticket(db: Session, user_id: uuid.UUID, ticket_id: uuid.UUID):
     db.query(models.Ticket).filter(models.Ticket.id == ticket_id,
                                    models.Ticket.owner_id == user_id).delete()
     db.commit()
-    return ticket_id
+    return schemas.TicketID(ticket_id)
 
 # ----------------------------------------------------------------------------------------------------------------------
 # VERIFICATION RECORDS
