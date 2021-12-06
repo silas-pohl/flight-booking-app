@@ -66,6 +66,7 @@ class TicketBase(OwnedItemBase):
 
 class Ticket(TicketBase):
     id: uuid.UUID
+    created: datetime
 
     class Config:
         orm_mode = True

@@ -153,7 +153,7 @@ def authenticate_user(email: str, password: str, db: Session):
 # Routes
 
 
-@app.get("/me/", response_model=schemas.UserBase)
+@app.get("/me", response_model=schemas.UserBase)
 async def read_users_me(current_user: schemas.User = Depends(auth.get_current_active_user)):
     return {
         "email": current_user.email,
@@ -162,7 +162,7 @@ async def read_users_me(current_user: schemas.User = Depends(auth.get_current_ac
     }
 
 
-@app.get("/me/tickets/")
+@app.get("/me/tickets")
 async def read_own_tickets(current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
     return crud.get_user_tickets(db, current_user.id)
 
@@ -182,7 +182,7 @@ async def get_all_airports(airport_id: uuid.UUID, current_user: schemas.User = D
     return crud.get_airport(db=db, airport_id=airport_id)
 
 
-@app.get("/flights/")
+@app.get("/flights")
 async def get_all_flights(current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
     return crud.get_all_flights(db)
 
@@ -192,7 +192,7 @@ async def get_flight(flight_id: uuid.UUID, current_user: schemas.User = Depends(
     return crud.get_flight(db, flight_id)
 
 
-@app.post("/me/booking/")
+@app.post("/me/booking")
 async def book_flight(data: schemas.FlightID, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
     flight = crud.get_flight(db=db, flight_id=data.flight_id)
     booked_tickets = crud.get_booked_tickets_number(
@@ -205,7 +205,7 @@ async def book_flight(data: schemas.FlightID, current_user: schemas.User = Depen
         status_code=409, detail="No more tickets available for this flight.")
 
 
-@app.post("/me/cancellation/")
+@app.post("/me/cancellation")
 async def cancel_flight(data: schemas.TicketID, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
     user_ticket = crud.get_user_ticket(
         db=db, user_id=current_user.id, ticket_id=data.ticket_id)
@@ -241,7 +241,7 @@ async def get_all_users(current_user: schemas.User = Depends(auth.get_current_ac
     return crud.get_users(db)
 
 
-@app.post("/flights/", response_model=schemas.Flight)
+@app.post("/flights", response_model=schemas.Flight)
 async def create_flight(flight: schemas.FlightBase, current_user: schemas.User = Depends(auth.get_current_active_admin_user), db: Session = Depends(get_db)):
     return crud.create_flight(db, flight)
 
