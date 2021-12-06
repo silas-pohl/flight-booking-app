@@ -35,9 +35,8 @@
         .then((res: Response) => {
             if (res.status === 200) { 
                 res.json().then((data: any) => { 
-                    access_token.set(data.access_token);
-                    console.log($access_token);
-                    console.log(data.expires_in);
+                    //access_token.set(data.access_token);
+                    localStorage.setItem("access_token", data.access_token);
                     window.location.href = "/";
                 });
             }
@@ -50,7 +49,7 @@
     }
 </script>
 
-<div id="card">
+<div id="login">
     <img src="images/logo.svg" alt="The Flight Booking Company" style="position: relative; left: 10%; width: 80%;"/>
     <Form on:submit={check_form}>
         <TextInput
@@ -94,7 +93,7 @@
 </div>
 
 <style>
-    #card {
+    #login {
         width: 600px;
         padding: 20px;
         background-color: white;
