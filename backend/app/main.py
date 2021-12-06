@@ -118,7 +118,7 @@ async def login(form_data: schemas.TokenLogin, response: Response, db: Session =
     return {"access_token": access_token, "token_type": "bearer", "expires_in": auth.ACCESS_TOKEN_EXPIRE_MINUTES*60*1000}
 
 
-def authenticate_user(email: str, password: str, db: Session = Depends(get_db)):
+def authenticate_user(email: str, password: str, db: Session):
     user = crud.read_user_by_email(db, email=email)
     if not user:
         return False
