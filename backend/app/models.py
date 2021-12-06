@@ -71,3 +71,8 @@ class VerificationRecord(Base):
     action = Column(String)
     verification_code = Column(Integer)
     created = Column(TIMESTAMP)
+
+class RefreshTokens(Base):
+    __tablename__ = "refresh_tokens"
+
+    token = Column(String, primary_key=True)

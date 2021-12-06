@@ -12,9 +12,10 @@ models.Base.metadata.create_all(bind=engine)
 
 # Secret key
 # Generate using: openssl rand -hex 32
-SECRET_KEY = "4afd4f49b466a005e670c2bcac2dfc3288a6825993d11303317e7df5c54e87e6"
+ACCESS_TOKEN_SECRET = "8a05ef39f6ae53dab9d38eb853d6bb6f58def06e3adf3118a62031c3e830ea86"
+REFRESH_TOKEN_SECRET = "0f074144cd24f703f0da7fa94791c96324a05306d35328feb379a0c166c700c7"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 15
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -57,7 +58,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     else:
         expire = datetime.utcnow() + timedelta(minutes=15)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, ACCESS_TOKEN_SECRET, algorithm=ALGORITHM)
     return encoded_jwt
 
 
@@ -68,7 +69,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, ACCESS_TOKEN_SECRET, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
         if username is None:
             raise credentials_exception

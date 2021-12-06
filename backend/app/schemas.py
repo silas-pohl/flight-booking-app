@@ -9,6 +9,7 @@ import uuid
 class Token(BaseModel):
     access_token: str
     token_type: str
+    expires_in: int
 
 
 class TokenData(BaseModel):
@@ -105,7 +106,7 @@ class EmailVerificationEntry(EmailVerificationEntryBase):
 
 # -----------------------------------------------------------------------------
 class TokenLogin(BaseModel):
-    username: str
+    email: str
     password: str
 
 
