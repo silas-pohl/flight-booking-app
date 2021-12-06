@@ -486,10 +486,10 @@ def test_register_invalid_verification_code(mock_crud):
         "detail": "Incorrect verification code"}
 
 
-# /token
+# /login
 @ mock.patch("app.main.auth.create_access_token")
 @ mock.patch("app.main.authenticate_user")
-def test_token_valid_login(mock_authenticate_user, mock_create_access_token):
+def test_login_valid_login(mock_authenticate_user, mock_create_access_token):
     mock_authenticate_user.return_value = get_test_user()
     mock_create_access_token.return_value = get_access_token()
 
@@ -497,29 +497,29 @@ def test_token_valid_login(mock_authenticate_user, mock_create_access_token):
     valid_username = get_valid_test_email()
     valid_password = get_valid_password()
 
-    response_token = client.post(
-        "/token", json={"username": valid_username, "password": valid_password
+    response_login = client.post(
+        "/login", json={"email": valid_username, "password": valid_password
                         })
 
-    assert response_token.status_code == 200
-    assert response_token.json() == {
-        "access_token": access_token, "token_type": "bearer"}
+    assert response_login.status_code == 200
+    assert response_login.json() == {
+        "access_token": access_token, "token_type": "bearer", "expires_in": 900000}
 
 
 @ mock.patch("app.main.authenticate_user")
-def test_token_non_matching_credentials(mock_authenticate_user):
+def test_login_non_matching_credentials(mock_authenticate_user):
     mock_authenticate_user.return_value = None
 
     valid_username = get_valid_test_email()
     valid_password = get_valid_password()
 
-    response_token = client.post(
-        "/token", json={"username": valid_username, "password": valid_password
+    response_login = client.post(
+        "/login", json={"email": valid_username, "password": valid_password
                         })
 
-    assert response_token.status_code == 401
-    assert response_token.headers["WWW-Authenticate"] == "Bearer"
-    assert response_token.json() == {
+    assert response_login.status_code == 401
+    assert response_login.headers["WWW-Authenticate"] == "Bearer"
+    assert response_login.json() == {
         "detail": "Incorrect email or password"}
 
 
