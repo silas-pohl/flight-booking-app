@@ -23,6 +23,69 @@ def get_test_user():
     )
 
 
+def get_test_user_json():
+    return {
+        "email": "test@test.test",
+        "first_name": "test",
+        "last_name": "test",
+        "id": "0deb3503-8efd-4f47-b842-44975098ff32",
+        "is_active": "True",
+        "is_admin": "False"
+    }
+
+
+def get_test_admin_user():
+    return schemas.User(
+        email="best@best.best",
+        first_name="best",
+        last_name="best",
+        id="0deb3503-8efd-4f47-b842-44975098ff45",
+        is_active=True,
+        is_admin=True
+    )
+
+
+def get_test_users():
+    user1 = schemas.User(
+        email="test@test.test",
+        first_name="test",
+        last_name="test",
+        id="0deb3503-8efd-4f47-b842-44975098ff32",
+        is_active=True,
+        is_admin=False
+    )
+
+    user2 = schemas.User(
+        email="best@best.best",
+        first_name="best",
+        last_name="best",
+        id="0deb3503-8efd-4f47-b842-44975098ff45",
+        is_active=True,
+        is_admin=True
+    )
+
+    return [user1, user2]
+
+
+def get_test_users_json():
+    return [{
+        "email": "test@test.test",
+        "first_name": "test",
+        "last_name": "test",
+        "id": "0deb3503-8efd-4f47-b842-44975098ff32",
+        "is_active": "True",
+        "is_admin": "False"
+    },
+        {
+        "email": "best@best.best",
+        "first_name": "best",
+        "last_name": "best",
+        "id": "0deb3503-8efd-4f47-b842-44975098ff45",
+        "is_active": "True",
+        "is_admin": "True"
+    }]
+
+
 def get_access_token():
     return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJwYXltZW50cy5mbGlnaHQuYm9va2luZ0BnbWFpbC5jb20iLCJhZG1pbiI6ZmFsc2UsImV4cCI6MTYzODU1MDI4N30.pcjYDatsOw7rtbOl36s0aruAaKwl6dWYPHrxR94iI-A"
 
@@ -1108,3 +1171,11 @@ def test_me_cancellation_inactive():
         "detail": "Inactive user"}
 
     main.app.dependency_overrides = {}
+
+
+# admin endpoints
+# /flights
+
+# /flights/flight_id
+
+# /users
