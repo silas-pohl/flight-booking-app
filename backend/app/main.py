@@ -192,7 +192,7 @@ async def get_flight(flight_id: uuid.UUID, current_user: schemas.User = Depends(
     return crud.get_flight(db, flight_id)
 
 
-@app.post("/me/booking")
+@app.post("/me/booking", response_model=schemas.TicketID)
 async def book_flight(data: schemas.FlightID, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
     flight = crud.get_flight(db=db, flight_id=data.flight_id)
     booked_tickets = crud.get_booked_tickets_number(
@@ -200,7 +200,7 @@ async def book_flight(data: schemas.FlightID, current_user: schemas.User = Depen
     if (flight.seats - booked_tickets > 0):
         ticket = crud.create_user_ticket(
             db=db, user_id=current_user.id, flight_id=data.flight_id, created=datetime.now())
-        return {"ticket_id": ticket.id}
+        return schemas.TicketID(ticket_id=ticket.id)
     raise HTTPException(
         status_code=409, detail="No more tickets available for this flight.")
 
@@ -210,8 +210,8 @@ async def cancel_flight(data: schemas.TicketID, current_user: schemas.User = Dep
     user_ticket = crud.get_user_ticket(
         db=db, user_id=current_user.id, ticket_id=data.ticket_id)
     if(datetime.now() - user_ticket.created < timedelta(hours=48)):
-        return crud.delete_user_ticket(
-            db=db, user_id=current_user.id, ticket_id=data.ticket_id)
+        return schemas.TicketID(ticket_id=crud.delete_user_ticket(
+            db=db, user_id=current_user.id, ticket_id=data.ticket_id))
     else:
         raise HTTPException(
             status_code=409, detail="Cancellation is only available until 48h before takeoff")

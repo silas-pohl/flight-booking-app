@@ -104,7 +104,7 @@ def delete_user_ticket(db: Session, user_id: uuid.UUID, ticket_id: uuid.UUID):
     db.query(models.Ticket).filter(models.Ticket.id == ticket_id,
                                    models.Ticket.owner_id == user_id).delete()
     db.commit()
-    return ticket_id
+    return schemas.TicketID(ticket_id)
 
 # ----------------------------------------------------------------------------------------------------------------------
 # VERIFICATION RECORDS

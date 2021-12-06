@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from . import crud, models, schemas
@@ -26,8 +26,8 @@ def create_example_entities(db: Session):
     example_flight_base_1 = schemas.FlightBase(
         departure_airport_id=example_airport_1.id,
         destination_airport_id=example_airport_2.id,
-        departure_time_utc=datetime.now(),
-        arrival_time_utc=datetime.now(),
+        departure_time_utc=datetime.now() + timedelta(hours=96),
+        arrival_time_utc=datetime.now() + timedelta(hours=100),
         ticket_price_dollars=20.00,
         seats=24
     )
@@ -35,6 +35,6 @@ def create_example_entities(db: Session):
     example_flight_1 = crud.create_flight(db=db, flight=example_flight_base_1)
 
     example_ticket_1 = crud.create_user_ticket(
-        db, user_id=example_user_1.id, ticket_flight_id=example_flight_1.id, created=datetime.now())
+        db, user_id=example_user_1.id, flight_id=example_flight_1.id, created=datetime.now())
 
     return {"message": "Example entities set up"}
