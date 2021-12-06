@@ -64,6 +64,16 @@ def get_invalid_password():
 
 
 def get_tickets():
+    ticket1 = schemas.Ticket(id="23c557f8-5fb6-4fc0-8cf6-a685d7680112", created=datetime(
+        year=2021, month=12, day=3, hour=11, minute=23, second=25, microsecond=177772), owner_id="0deb3503-8efd-4f47-b842-44975098ff32", flight_id="20453064-2468-48ef-896f-b4a2513973a3")
+
+    ticket2 = schemas.Ticket(id="e1d11a21-d346-4480-b4bb-c16da0347c3b", created=datetime(
+        year=2021, month=12, day=4, hour=18, minute=14, second=9, microsecond=819645), owner_id="0deb3503-8efd-4f47-b842-44975098ff32", flight_id="20453064-2468-48ef-896f-b4a2513973a3")
+
+    return [ticket1, ticket2]
+
+
+def get_tickets_json():
     return [
         {
             "id": "23c557f8-5fb6-4fc0-8cf6-a685d7680112",
@@ -81,6 +91,11 @@ def get_tickets():
 
 
 def get_ticket():
+    return schemas.Ticket(id="23c557f8-5fb6-4fc0-8cf6-a685d7680112", created=datetime(
+        year=2021, month=12, day=3, hour=11, minute=23, second=25, microsecond=177772), owner_id="0deb3503-8efd-4f47-b842-44975098ff32", flight_id="20453064-2468-48ef-896f-b4a2513973a3")
+
+
+def get_ticket_json():
     return {
         "id": "23c557f8-5fb6-4fc0-8cf6-a685d7680112",
         "created": "2021-12-03T11:23:25.177772",
@@ -90,6 +105,15 @@ def get_ticket():
 
 
 def get_airports():
+    airport1 = schemas.Airport(
+        title="JFK New York", id="9407584e-18b4-4023-86b1-884cc21ec647", description=None)
+    airport2 = schemas.Airport(
+        title="Munich Airport", id="41a7ead7-6dc3-4720-8108-35180659e39e", description=None)
+
+    return [airport1, airport2]
+
+
+def get_airports_json():
     return [
         {
             "title": "JFK New York",
@@ -105,6 +129,11 @@ def get_airports():
 
 
 def get_airport():
+    return schemas.Airport(
+        title="JFK New York", id="9407584e-18b4-4023-86b1-884cc21ec647", description=None)
+
+
+def get_airport_json():
     return {
         "title": "JFK New York",
         "id": "9407584e-18b4-4023-86b1-884cc21ec647",
@@ -113,6 +142,18 @@ def get_airport():
 
 
 def get_flights():
+
+    arrival_time = datetime(year=2021, month=12, day=3,
+                            hour=11, minute=23, second=25, microsecond=151590)
+    departure_time = datetime(
+        year=2021, month=12, day=3, hour=11, minute=23, second=25, microsecond=151582)
+
+    return [schemas.Flight(id="20453064-2468-48ef-896f-b4a2513973a3", arrival_time_utc=arrival_time,
+                           destination_airport_id="41a7ead7-6dc3-4720-8108-35180659e39e", seats=24, departure_time_utc=departure_time,
+                           departure_airport_id="9407584e-18b4-4023-86b1-884cc21ec647", ticket_price_dollars=20.0)]
+
+
+def get_flights_json():
     return [
         {
             "id": "20453064-2468-48ef-896f-b4a2513973a3",
@@ -127,6 +168,17 @@ def get_flights():
 
 
 def get_flight():
+    arrival_time = datetime(year=2021, month=12, day=3,
+                            hour=11, minute=23, second=25, microsecond=151590)
+    departure_time = datetime(
+        year=2021, month=12, day=3, hour=11, minute=23, second=25, microsecond=151582)
+
+    return schemas.Flight(id="20453064-2468-48ef-896f-b4a2513973a3", arrival_time_utc=arrival_time,
+                          destination_airport_id="41a7ead7-6dc3-4720-8108-35180659e39e", seats=24, departure_time_utc=departure_time,
+                          departure_airport_id="9407584e-18b4-4023-86b1-884cc21ec647", ticket_price_dollars=20.0)
+
+
+def get_flight_json():
     return{
         "id": "20453064-2468-48ef-896f-b4a2513973a3",
         "arrival_time_utc": "2021-12-03T11:23:25.151590",
@@ -175,9 +227,9 @@ def get_http_422_invalid_id_format(id_type: str):
 # Endpoint unit tests
 
 # /verificationcode
-@pytest.mark.parametrize("verification_entry", [(get_test_verification_entry()), (None)])
-@mock.patch("app.main.mail.send_verification_code")
-@mock.patch("app.main.crud")
+@ pytest.mark.parametrize("verification_entry", [(get_test_verification_entry()), (None)])
+@ mock.patch("app.main.mail.send_verification_code")
+@ mock.patch("app.main.crud")
 def test_verification_code_valid_input_data(mock_crud, mock_send_verification_code, verification_entry):
 
     mock_crud.read_user_by_email.return_value = None
@@ -244,7 +296,7 @@ def test_verification_code_invalid_action():
 # /register
 
 
-@mock.patch("app.main.crud")
+@ mock.patch("app.main.crud")
 def test_register_valid_input_data(mock_crud):
 
     verification_entry = get_test_verification_entry()
@@ -329,7 +381,7 @@ def test_register_invalid_password():
     assert response_register.json() == {"detail": "Invalid request data"}
 
 
-@mock.patch("app.main.crud")
+@ mock.patch("app.main.crud")
 def test_register_no_verification_entry(mock_crud):
 
     valid_email = get_valid_test_email()
@@ -350,7 +402,7 @@ def test_register_no_verification_entry(mock_crud):
         "detail": "Incorrect verification code"}
 
 
-@mock.patch("app.main.crud")
+@ mock.patch("app.main.crud")
 def test_register_invalid_verification_code(mock_crud):
 
     valid_email = get_valid_test_email()
@@ -372,8 +424,8 @@ def test_register_invalid_verification_code(mock_crud):
 
 
 # /token
-@mock.patch("app.main.auth.create_access_token")
-@mock.patch("app.main.authenticate_user")
+@ mock.patch("app.main.auth.create_access_token")
+@ mock.patch("app.main.authenticate_user")
 def test_token_valid_login(mock_authenticate_user, mock_create_access_token):
     mock_authenticate_user.return_value = get_test_user()
     mock_create_access_token.return_value = get_access_token()
@@ -391,7 +443,7 @@ def test_token_valid_login(mock_authenticate_user, mock_create_access_token):
         "access_token": access_token, "token_type": "bearer"}
 
 
-@mock.patch("app.main.authenticate_user")
+@ mock.patch("app.main.authenticate_user")
 def test_token_non_matching_credentials(mock_authenticate_user):
     mock_authenticate_user.return_value = None
 
@@ -450,18 +502,19 @@ def test_me_inactive():
 
 
 # /me/tickets
-@mock.patch("app.main.crud.get_user_tickets")
+@ mock.patch("app.main.crud.get_user_tickets")
 def test_me_tickets(mock_crud_get_user_tickets):
 
     main.app.dependency_overrides[auth.get_current_active_user] = get_test_user
 
+    tickets_json = get_tickets_json()
     tickets = get_tickets()
     mock_crud_get_user_tickets.return_value = tickets
 
     response_me_tickets = client.get("/me/tickets")
 
     assert response_me_tickets.status_code == 200
-    assert response_me_tickets.json() == tickets
+    assert response_me_tickets.json() == tickets_json
 
     main.app.dependency_overrides = {}
 
@@ -492,24 +545,26 @@ def test_me_tickets_inactive():
 
 
 # /me/tickets/ticket_id
-@mock.patch("app.main.crud.get_user_ticket")
+@ mock.patch("app.main.crud.get_user_ticket")
 def test_me_tickets_tickets_id(mock_crud_get_user_ticket):
 
     main.app.dependency_overrides[auth.get_current_active_user] = get_test_user
 
+    ticket_json = get_ticket_json()
     ticket = get_ticket()
     mock_crud_get_user_ticket.return_value = ticket
+    ticket_id = ticket.id
 
     response_me_tickets = client.get(
-        "/me/tickets/23c557f8-5fb6-4fc0-8cf6-a685d7680112")
+        f"/me/tickets/{ticket_id}")
 
     assert response_me_tickets.status_code == 200
-    assert response_me_tickets.json() == ticket
+    assert response_me_tickets.json() == ticket_json
 
     main.app.dependency_overrides = {}
 
 
-@mock.patch("app.main.crud.get_user_ticket")
+@ mock.patch("app.main.crud.get_user_ticket")
 def test_me_tickets_tickets_id_not_found(mock_crud_get_user_ticket):
 
     main.app.dependency_overrides[auth.get_current_active_user] = get_test_user
@@ -576,18 +631,20 @@ def test_me_tickets_ticket_id_inactive():
 
 
 # /airports
-@mock.patch("app.main.crud.get_airports")
+@ mock.patch("app.main.crud.get_airports")
 def test_airports(mock_crud_get_airports):
 
     main.app.dependency_overrides[auth.get_current_active_user] = get_test_user
 
+    airports_json = get_airports_json()
     airports = get_airports()
+
     mock_crud_get_airports.return_value = airports
 
     response_airports = client.get("/airports")
 
     assert response_airports.status_code == 200
-    assert response_airports.json() == airports
+    assert response_airports.json() == airports_json
 
     main.app.dependency_overrides = {}
 
@@ -618,11 +675,12 @@ def test_airports_inactive():
 
 
 # /airports/airport_id
-@mock.patch("app.main.crud.get_airport")
+@ mock.patch("app.main.crud.get_airport")
 def test_airports_airport_id(mock_crud_get_airport):
 
     main.app.dependency_overrides[auth.get_current_active_user] = get_test_user
 
+    airport_json = get_airport_json()
     airport = get_airport()
     mock_crud_get_airport.return_value = airport
 
@@ -630,12 +688,12 @@ def test_airports_airport_id(mock_crud_get_airport):
         "/airports/9407584e-18b4-4023-86b1-884cc21ec647")
 
     assert response_airports.status_code == 200
-    assert response_airports.json() == airport
+    assert response_airports.json() == airport_json
 
     main.app.dependency_overrides = {}
 
 
-@mock.patch("app.main.crud.get_airport")
+@ mock.patch("app.main.crud.get_airport")
 def test_airports_airport_id_not_found(mock_crud_get_airport):
 
     main.app.dependency_overrides[auth.get_current_active_user] = get_test_user
@@ -702,18 +760,20 @@ def test_airports_airport_id_inactive():
 
 
 # /flights
-@mock.patch("app.main.crud.get_all_flights")
+@ mock.patch("app.main.crud.get_all_flights")
 def test_flights(mock_crud_get_all_flights):
 
     main.app.dependency_overrides[auth.get_current_active_user] = get_test_user
 
+    flights_json = get_flights_json()
     flights = get_flights()
+
     mock_crud_get_all_flights.return_value = flights
 
     response_flights = client.get("/flights")
 
     assert response_flights.status_code == 200
-    assert response_flights.json() == flights
+    assert response_flights.json() == flights_json
 
     main.app.dependency_overrides = {}
 
@@ -744,24 +804,26 @@ def test_flights_inactive():
 
 
 # /flights/flight_id
-@mock.patch("app.main.crud.get_flight")
+@ mock.patch("app.main.crud.get_flight")
 def test_flights_flight_id(mock_crud_get_flight):
 
     main.app.dependency_overrides[auth.get_current_active_user] = get_test_user
 
+    flight_json = get_flight_json()
     flight = get_flight()
+
     mock_crud_get_flight.return_value = flight
 
     response_flights = client.get(
         "/flights/20453064-2468-48ef-896f-b4a2513973a3")
 
     assert response_flights.status_code == 200
-    assert response_flights.json() == flight
+    assert response_flights.json() == flight_json
 
     main.app.dependency_overrides = {}
 
 
-@mock.patch("app.main.crud.get_flight")
+@ mock.patch("app.main.crud.get_flight")
 def test_flights_flight_id_not_found(mock_crud_get_flight):
 
     main.app.dependency_overrides[auth.get_current_active_user] = get_test_user
@@ -825,3 +887,104 @@ def test_flights_flight_id_inactive():
     assert response_flights.json() == {
         "detail": "Inactive user"}
     main.app.dependency_overrides = {}
+
+
+# /me/booking
+@ mock.patch("app.main.crud")
+def test_me_booking(mock_crud):
+    main.app.dependency_overrides[auth.get_current_active_user] = get_test_user
+
+    flight = get_flight()
+    ticket = get_ticket()
+    mock_crud.get_booked_tickets_number.return_value = flight.seats - 1
+    mock_crud.get_flight.return_value = flight
+    mock_crud.create_user_ticket.return_value = ticket
+
+    response_me_booking = client.post(
+        "/me/booking", json={"flight_id": str(flight.id)})
+    assert response_me_booking.status_code == 200
+    assert response_me_booking.json() == {"ticket_id": str(ticket.id)}
+
+
+@ mock.patch("app.main.crud")
+def test_me_booking_no_more_tickets_available(mock_crud):
+    main.app.dependency_overrides[auth.get_current_active_user] = get_test_user
+
+    flight = get_flight()
+    mock_crud.get_booked_tickets_number.return_value = flight.seats
+    mock_crud.get_flight.return_value = flight
+
+    response_me_booking = client.post(
+        "/me/booking", json={"flight_id": str(flight.id)})
+    assert response_me_booking.status_code == 409
+    assert response_me_booking.json(
+    ) == {"detail": "No more tickets available for this flight."}
+
+
+@ mock.patch("app.main.crud.get_flight")
+def test_me_booking_flight_id_not_found(mock_crud_get_flight):
+
+    main.app.dependency_overrides[auth.get_current_active_user] = get_test_user
+
+    mock_crud_get_flight.side_effect = get_http_404_object_not_found()
+
+    response_me_booking = client.post(
+        "/me/booking", json={"flight_id": "20453064-2468-48ef-896f-b4a251394444"})
+
+    assert response_me_booking.status_code == 404
+    assert response_me_booking.json() == {
+        "detail": "Object not found"}
+
+    main.app.dependency_overrides = {}
+
+
+def test_me_booking_flight_id_invalid_id_format():
+
+    main.app.dependency_overrides[auth.get_current_active_user] = get_test_user
+
+    respnse_me_booking = client.post(
+        "/me/booking", json={"flight_id": "1234"})
+
+    assert respnse_me_booking.status_code == 422
+    assert respnse_me_booking.json() == {"detail": [
+        {
+            "loc": [
+                "body",
+                "flight_id"
+            ],
+            "msg": "value is not a valid uuid",
+            "type": "type_error.uuid"
+        }
+    ]}
+
+    main.app.dependency_overrides = {}
+
+
+def test_me_booking_unauthorized():
+
+    main.app.dependency_overrides[auth.get_current_active_user] = raise_http_401_could_not_validate_credentials
+
+    respnse_me_booking = client.post(
+        "/me/booking", json={"flight_id": "20453064-2468-48ef-896f-b4a2513973a3"})
+
+    assert respnse_me_booking.status_code == 401
+    assert respnse_me_booking.json() == {
+        "detail": "Could not validate credentials"}
+    assert respnse_me_booking.headers["WWW-Authenticate"] == "Bearer"
+    main.app.dependency_overrides = {}
+
+
+def test_me_booking_inactive():
+
+    main.app.dependency_overrides[auth.get_current_active_user] = raise_http_400_inactive_user
+
+    respnse_me_booking = client.post(
+        "/me/booking", json={"flight_id": "20453064-2468-48ef-896f-b4a2513973a3"})
+
+    assert respnse_me_booking.status_code == 400
+    assert respnse_me_booking.json() == {
+        "detail": "Inactive user"}
+    main.app.dependency_overrides = {}
+
+
+# /me/cancellation
