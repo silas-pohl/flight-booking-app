@@ -249,5 +249,4 @@ async def create_flight(flight: schemas.FlightBase, current_user: schemas.User =
 
 @app.delete("/flights/{flight_id}", response_model=schemas.FlightID)
 async def delete_flight(flight_id: uuid.UUID, current_user: schemas.User = Depends(auth.get_current_active_admin_user), db: Session = Depends(get_db)):
-    crud.delete_flight(db=db, flight_id=flight_id)
-    return schemas.FlightID(flight_id=flight_id)
+    return crud.delete_flight(db=db, flight_id=flight_id)
