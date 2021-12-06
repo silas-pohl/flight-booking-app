@@ -210,9 +210,8 @@ async def cancel_flight(data: schemas.TicketID, current_user: schemas.User = Dep
     user_ticket = crud.get_user_ticket(
         db=db, user_id=current_user.id, ticket_id=data.ticket_id)
     if(datetime.now() - user_ticket.created < timedelta(hours=48)):
-        crud.delete_user_ticket(
+        return crud.delete_user_ticket(
             db=db, user_id=current_user.id, ticket_id=data.ticket_id)
-        return schemas.TicketID(data.ticket_id)
     else:
         raise HTTPException(
             status_code=409, detail="Cancellation is only available until 48h before takeoff")
