@@ -889,7 +889,7 @@ def test_flights_flight_id_inactive():
     main.app.dependency_overrides = {}
 
 
-# Booking
+# /me/booking
 @ mock.patch("app.main.crud")
 def test_me_booking(mock_crud):
     main.app.dependency_overrides[auth.get_current_active_user] = get_test_user
@@ -904,3 +904,87 @@ def test_me_booking(mock_crud):
         "/me/booking", json={"flight_id": str(flight.id)})
     assert response_me_booking.status_code == 200
     assert response_me_booking.json() == {"ticket_id": str(ticket.id)}
+
+
+@ mock.patch("app.main.crud")
+def test_me_booking_no_more_tickets_available(mock_crud):
+    main.app.dependency_overrides[auth.get_current_active_user] = get_test_user
+
+    flight = get_flight()
+    mock_crud.get_booked_tickets_number.return_value = flight.seats
+    mock_crud.get_flight.return_value = flight
+
+    response_me_booking = client.post(
+        "/me/booking", json={"flight_id": str(flight.id)})
+    assert response_me_booking.status_code == 409
+    assert response_me_booking.json(
+    ) == {"detail": "No more tickets available for this flight."}
+
+
+@ mock.patch("app.main.crud.get_flight")
+def test_me_booking_flight_id_not_found(mock_crud_get_flight):
+
+    main.app.dependency_overrides[auth.get_current_active_user] = get_test_user
+
+    mock_crud_get_flight.side_effect = get_http_404_object_not_found()
+
+    response_me_booking = client.post(
+        "/me/booking", json={"flight_id": "20453064-2468-48ef-896f-b4a251394444"})
+
+    assert response_me_booking.status_code == 404
+    assert response_me_booking.json() == {
+        "detail": "Object not found"}
+
+    main.app.dependency_overrides = {}
+
+
+def test_me_booking_flight_id_invalid_id_format():
+
+    main.app.dependency_overrides[auth.get_current_active_user] = get_test_user
+
+    respnse_me_booking = client.post(
+        "/me/booking", json={"flight_id": "1234"})
+
+    assert respnse_me_booking.status_code == 422
+    assert respnse_me_booking.json() == {"detail": [
+        {
+            "loc": [
+                "body",
+                "flight_id"
+            ],
+            "msg": "value is not a valid uuid",
+            "type": "type_error.uuid"
+        }
+    ]}
+
+    main.app.dependency_overrides = {}
+
+
+def test_me_booking_unauthorized():
+
+    main.app.dependency_overrides[auth.get_current_active_user] = raise_http_401_could_not_validate_credentials
+
+    respnse_me_booking = client.post(
+        "/me/booking", json={"flight_id": "20453064-2468-48ef-896f-b4a2513973a3"})
+
+    assert respnse_me_booking.status_code == 401
+    assert respnse_me_booking.json() == {
+        "detail": "Could not validate credentials"}
+    assert respnse_me_booking.headers["WWW-Authenticate"] == "Bearer"
+    main.app.dependency_overrides = {}
+
+
+def test_me_booking_inactive():
+
+    main.app.dependency_overrides[auth.get_current_active_user] = raise_http_400_inactive_user
+
+    respnse_me_booking = client.post(
+        "/me/booking", json={"flight_id": "20453064-2468-48ef-896f-b4a2513973a3"})
+
+    assert respnse_me_booking.status_code == 400
+    assert respnse_me_booking.json() == {
+        "detail": "Inactive user"}
+    main.app.dependency_overrides = {}
+
+
+# /me/cancellation

@@ -199,7 +199,7 @@ async def book_flight(data: schemas.FlightID, current_user: schemas.User = Depen
         db=db, flight_id=data.flight_id)
     if (flight.seats - booked_tickets > 0):
         ticket = crud.create_user_ticket(
-            db=db, user_id=current_user.id, ticket_flight_id=data.flight_id, created=datetime.now())
+            db=db, user_id=current_user.id, flight_id=data.flight_id, created=datetime.now())
         return {"ticket_id": ticket.id}
     raise HTTPException(
         status_code=409, detail="No more tickets available for this flight.")
