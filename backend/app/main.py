@@ -91,15 +91,18 @@ def register(data: schemas.RegisterData, db: Session = Depends(get_db)):
         raise HTTPException(status_code=422, detail="Invalid request data")
 
     # Check if email and verificaion code not match
-    verification_record = crud.read_verification_record(db, data.email, 'register')
+    verification_record = crud.read_verification_record(
+        db, data.email, 'register')
     if not (verification_record) or int(data.verification_code) != verification_record.verification_code:
-        raise HTTPException(status_code=403, detail="Incorrect verification code")
+        raise HTTPException(
+            status_code=403, detail="Incorrect verification code")
 
     # Create user, delete verification record and mirror request data
     crud.create_user(db, data.email, data.password,
                      data.first_name, data.last_name)
     crud.delete_verification_record(db, data.email, 'register')
     return data
+
 
 @app.post("/login", response_model=schemas.Token)
 async def login(form_data: schemas.TokenLogin, response: Response, db: Session = Depends(get_db)):
@@ -132,6 +135,7 @@ async def refreshtoken(db: Session = Depends(get_db)):
     pass
 
 # Routes
+
 
 @app.get("/me", response_model=schemas.UserBase)
 async def read_users_me(current_user: schemas.User = Depends(auth.get_current_active_user)):
@@ -223,6 +227,16 @@ async def get_all_users(current_user: schemas.User = Depends(auth.get_current_ac
 
 @app.post("/flights", response_model=schemas.Flight)
 async def create_flight(flight: schemas.FlightBase, current_user: schemas.User = Depends(auth.get_current_active_admin_user), db: Session = Depends(get_db)):
+    if flight.arrival_time_utc < flight.departure_time_utc:
+        raise HTTPException(
+            status_code=422, detail="Arrival time must not be earlier than departure time.")
+    if flight.seats < 0:
+        raise HTTPException(
+            status_code=422, detail="Number of available seats must be greater than or equal to zero.")
+    if flight.ticket_price_dollars < 0.0:
+        raise HTTPException(
+            status_code=422, detail="Ticket price must be greater than or equal to zero.")
+
     return crud.create_flight(db, flight)
 
 

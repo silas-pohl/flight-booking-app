@@ -60,6 +60,10 @@ def get_all_flights(db: Session, skip: int = 0, limit: int = 100):
 
 
 def create_flight(db: Session, flight: schemas.FlightBase):
+
+    get_airport(db, flight.departure_airport_id)
+    get_airport(db, flight.destination_airport_id)
+
     db_flight = models.Flight(**flight.dict())
     db.add(db_flight)
     db.commit()
