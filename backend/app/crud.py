@@ -14,6 +14,9 @@ not_found_exception = HTTPException(
     detail="Object not found"
 )
 
+# ----------------------------------------------------------------------------------------------------------------------
+# USERS
+
 
 def get_user(db: Session, user_id: uuid.UUID):
     return db.query(models.User).filter(models.User.id == user_id).first()
@@ -35,6 +38,28 @@ def create_user(db: Session, email: str, password: str, first_name: str, last_na
     db.commit()
     db.refresh(db_user)
     return db_user
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Refresh tokens
+
+
+def add_refresh_token(db: Session, refresh_token: str):
+    db_token = models.RefreshTokens(token=refresh_token)
+    db.add(db_token)
+    db.commit()
+    db.refresh(db_token)
+    return db_token
+
+
+def get_refresh_token(db: Session, refresh_token: str):
+    return db.query(models.RefreshTokens).filter(models.RefreshTokens.token == refresh_token).first()
+
+
+def delete_refresh_token():
+    pass
+
+
+# ----------------------------------------------------------------------------------------------------------------------
 
 
 def get_airport(db: Session, airport_id: uuid.UUID):
