@@ -50,9 +50,9 @@ def verificationcode(data: schemas.EmailVerification, db: Session = Depends(get_
         raise HTTPException(status_code=422, detail="Invalid request data")
 
     # Check if email already exists for register or not exists for login and reset
-    if data.action == 'register' and crud.read_user_by_email(db, data.email):
+    if data.action == 'register' and crud.get_user_by_email(db, data.email):
         raise HTTPException(status_code=409, detail="Email already registered")
-    elif data.action in ['login', 'reset'] and crud.read_user_by_email(db, data.email) is None:
+    elif data.action in ['login', 'reset'] and crud.get_user_by_email(db, data.email) is None:
         raise HTTPException(status_code=404, detail="Email not registered")
 
     # Delete all records older than 5mins from verification_records table
@@ -106,7 +106,7 @@ def register(data: schemas.RegisterData, db: Session = Depends(get_db)):
 
 @app.post("/login", response_model=schemas.RefreshToken)
 async def login(form_data: schemas.TokenLogin, response: Response, db: Session = Depends(get_db)):
-    user = authenticate_user(form_data.email, form_data.password, db)
+    user = auth.authenticate_user(form_data.email, form_data.password, db)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -125,15 +125,6 @@ async def login(form_data: schemas.TokenLogin, response: Response, db: Session =
             "token_type": "bearer",
             "expires_in": auth.ACCESS_TOKEN_EXPIRE_MINUTES*60*1000,
             "refresh_token": refresh_token}
-
-
-def authenticate_user(email: str, password: str, db: Session):
-    user = crud.read_user_by_email(db, email=email)
-    if not user:
-        return False
-    if not auth.verify_password(password, user.hashed_password):
-        return False
-    return user
 
 
 @app.post("/refreshtoken", response_model=schemas.Token)

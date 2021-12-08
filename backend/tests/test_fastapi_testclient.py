@@ -1,8 +1,7 @@
 from datetime import datetime, timedelta
 from fastapi.testclient import TestClient
-from sqlalchemy.orm import Session
 from unittest import mock
-from app import main, crud, schemas, mail, auth
+from app import main, schemas, auth
 from fastapi import HTTPException, status
 
 import pytest
@@ -89,6 +88,10 @@ def get_test_users_json():
 
 def get_access_token():
     return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJwYXltZW50cy5mbGlnaHQuYm9va2luZ0BnbWFpbC5jb20iLCJhZG1pbiI6ZmFsc2UsImV4cCI6MTYzODU1MDI4N30.pcjYDatsOw7rtbOl36s0aruAaKwl6dWYPHrxR94iI-A"
+
+
+def get_refresh_token():
+    return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0QHRlc3QudGVzdCJ9.O3JxzSUwBBSS7LOFUWPfJTcBRUSo_F48z_TiNGkFyJw"
 
 
 def get_test_verification_entry():
@@ -296,7 +299,7 @@ def get_http_422_invalid_id_format(id_type: str):
 @ mock.patch("app.main.crud")
 def test_verification_code_valid_input_data(mock_crud, mock_send_verification_code, verification_entry):
 
-    mock_crud.read_user_by_email.return_value = None
+    mock_crud.get_user_by_email.return_value = None
     mock_crud.delete_expired_verification_records.return_value = None
     mock_crud.read_verification_record.return_value = verification_entry
     mock_crud.create_verification_record.return_value = None
@@ -320,7 +323,7 @@ def test_verification_code_valid_input_data(mock_crud, mock_send_verification_co
     assert response_reset.status_code == 404
     assert response_reset.json() == {"detail": "Email not registered"}
 
-    mock_crud.read_user_by_email.return_value = get_test_user()
+    mock_crud.get_user_by_email.return_value = get_test_user()
 
     response_register = client.post(
         "/verificationcode", json={"email": valid_email, "action": "register"})
@@ -489,12 +492,16 @@ def test_register_invalid_verification_code(mock_crud):
 
 # /login
 @ mock.patch("app.main.auth.create_access_token")
-@ mock.patch("app.main.authenticate_user")
-def test_login_valid_login(mock_authenticate_user, mock_create_access_token):
-    mock_authenticate_user.return_value = get_test_user()
-    mock_create_access_token.return_value = get_access_token()
+@ mock.patch("app.main.auth.create_refresh_token")
+@ mock.patch("app.main.auth.authenticate_user")
+def test_login_valid_login(mock_auth_authenticate_user, mock_auth_create_refresh_token, mock_auth_create_access_token):
+    mock_auth_authenticate_user.return_value = get_test_user()
+    mock_auth_create_refresh_token.return_value = get_refresh_token()
+    mock_auth_create_access_token.return_value = get_access_token()
 
+    refresh_token = get_refresh_token()
     access_token = get_access_token()
+    refresh_token = get_refresh_token()
     valid_username = get_valid_test_email()
     valid_password = get_valid_password()
 
@@ -504,12 +511,12 @@ def test_login_valid_login(mock_authenticate_user, mock_create_access_token):
 
     assert response_login.status_code == 200
     assert response_login.json() == {
-        "access_token": access_token, "token_type": "bearer", "expires_in": 900000}
+        "access_token": access_token, "token_type": "bearer", "expires_in": auth.ACCESS_TOKEN_EXPIRE_MINUTES*60*1000, "refresh_token": refresh_token}
 
 
-@ mock.patch("app.main.authenticate_user")
-def test_login_non_matching_credentials(mock_authenticate_user):
-    mock_authenticate_user.return_value = None
+@ mock.patch("app.main.auth.authenticate_user")
+def test_login_non_matching_credentials(mock_auth_authenticate_user):
+    mock_auth_authenticate_user.return_value = None
 
     valid_username = get_valid_test_email()
     valid_password = get_valid_password()
@@ -527,8 +534,10 @@ def test_login_non_matching_credentials(mock_authenticate_user):
 # /me
 def test_me():
 
-    user = get_test_user()
     main.app.dependency_overrides[auth.get_current_active_user] = get_test_user
+
+    user = get_test_user()
+
     response_me = client.get("/me")
 
     assert response_me.status_code == 200
