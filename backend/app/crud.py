@@ -55,8 +55,11 @@ def get_refresh_token(db: Session, refresh_token: str):
     return db.query(models.RefreshTokens).filter(models.RefreshTokens.token == refresh_token).first()
 
 
-def delete_refresh_token():
-    pass
+def delete_refresh_token(db: Session, refresh_token: str):
+    db.query(models.RefreshTokens).filter(
+        models.RefreshTokens.token == refresh_token).delete()
+    db.commit()
+    return
 
 
 # ----------------------------------------------------------------------------------------------------------------------

@@ -15,7 +15,7 @@ models.Base.metadata.create_all(bind=engine)
 ACCESS_TOKEN_SECRET = "8a05ef39f6ae53dab9d38eb853d6bb6f58def06e3adf3118a62031c3e830ea86"
 REFRESH_TOKEN_SECRET = "0f074144cd24f703f0da7fa94791c96324a05306d35328feb379a0c166c700c7"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 15
+ACCESS_TOKEN_EXPIRE_MINUTES = 0.25
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -73,15 +73,15 @@ def create_refresh_token(data: dict, db: Session):
 
 def verify_token(token: str):
     try:
-        payload = jwt.decode(token, ACCESS_TOKEN_SECRET,
+        payload = jwt.decode(token, REFRESH_TOKEN_SECRET,
                              algorithms=[ALGORITHM])
         email: str = payload.get("sub")
         is_admin: bool = payload.get("admin")
         if email is None:
-            return False
+            return None, False
         return email, is_admin
     except JWTError:
-        return False
+        return None, False
 
 
 async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):

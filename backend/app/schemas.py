@@ -12,8 +12,12 @@ class Token(BaseModel):
     expires_in: int
 
 
-class RefreshToken(BaseModel):
-    token: str
+class RefreshToken(Token):
+    refresh_token: str
+
+
+class RequestAccessToken(BaseModel):
+    refresh_token: str
 
 
 class TokenData(BaseModel):
