@@ -114,10 +114,16 @@ async def login(form_data: schemas.TokenLogin, response: Response, db: Session =
             headers={"WWW-Authenticate": "Bearer"},
         )
     access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
+
     access_token = auth.create_access_token(
-        data={"sub": user.email, "admin": user.is_admin}, expires_delta=access_token_expires
+        data={"sub": user.email, "admin": user.is_admin},
+        db=db,
+        expires_delta=access_token_expires
     )
-    response.set_cookie(key="refresh_token", value="temp", httponly=True)
+    refresh_token = auth.create_refresh_token(data={"sub": user.email}, db=db)
+
+    response.set_cookie(key="refresh_token",
+                        value=refresh_token, httponly=True)
     return {"access_token": access_token, "token_type": "bearer", "expires_in": auth.ACCESS_TOKEN_EXPIRE_MINUTES*60*1000}
 
 
@@ -130,9 +136,40 @@ def authenticate_user(email: str, password: str, db: Session):
     return user
 
 
-@app.post("/refreshtoken")
-async def refreshtoken(db: Session = Depends(get_db)):
+@app.post("/refreshtoken", response_model=schemas.Token)
+async def refreshtoken(form_data: schemas.RefreshToken, response: Response, db: Session = Depends(get_db)):
+    username, admin = validate_token(form_data.token, db)
+    if not username:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid refresh token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
+
+    access_token = auth.create_access_token(
+        data={"sub": username, "admin": admin},
+        db=db,
+        expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer", "expires_in": auth.ACCESS_TOKEN_EXPIRE_MINUTES*60*1000}
+
+
+def validate_token(token, db: Session):
+    db_token = crud.get_refresh_token(db, refresh_token=token)
+    if not db_token:
+        return False
+
+    username = auth.verify_token(token)
+    if not username:
+        return False
+    return username
+
+
+@app.delete("/logout")
+def delete_refresh_token():
     pass
+
 
 # Routes
 

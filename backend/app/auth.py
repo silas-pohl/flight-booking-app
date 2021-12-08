@@ -58,8 +58,30 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     else:
         expire = datetime.utcnow() + timedelta(minutes=15)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, ACCESS_TOKEN_SECRET, algorithm=ALGORITHM)
+    encoded_jwt = jwt.encode(
+        to_encode, ACCESS_TOKEN_SECRET, algorithm=ALGORITHM)
     return encoded_jwt
+
+
+def create_refresh_token(data: dict, db: Session):
+    to_encode = data.copy()
+    encoded_jwt = jwt.encode(
+        to_encode, REFRESH_TOKEN_SECRET, algorithm=ALGORITHM)
+    crud.add_refresh_token(db, encoded_jwt)
+    return encoded_jwt
+
+
+def verify_token(token: str):
+    try:
+        payload = jwt.decode(token, ACCESS_TOKEN_SECRET,
+                             algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        is_admin: bool = payload.get("admin")
+        if email is None:
+            return False
+        return email, is_admin
+    except JWTError:
+        return False
 
 
 async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
@@ -69,7 +91,8 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, ACCESS_TOKEN_SECRET, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, ACCESS_TOKEN_SECRET,
+                             algorithms=[ALGORITHM])
         username: str = payload.get("sub")
         if username is None:
             raise credentials_exception
