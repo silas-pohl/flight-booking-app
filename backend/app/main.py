@@ -104,7 +104,7 @@ def register(data: schemas.RegisterData, db: Session = Depends(get_db)):
     return data
 
 
-@app.post("/login", response_model=schemas.Token)
+@app.post("/login", response_model=schemas.RefreshToken)
 async def login(form_data: schemas.TokenLogin, response: Response, db: Session = Depends(get_db)):
     user = authenticate_user(form_data.email, form_data.password, db)
     if not user:
@@ -117,14 +117,14 @@ async def login(form_data: schemas.TokenLogin, response: Response, db: Session =
 
     access_token = auth.create_access_token(
         data={"sub": user.email, "admin": user.is_admin},
-        db=db,
         expires_delta=access_token_expires
     )
     refresh_token = auth.create_refresh_token(data={"sub": user.email}, db=db)
 
-    response.set_cookie(key="refresh_token",
-                        value=refresh_token, httponly=True)
-    return {"access_token": access_token, "token_type": "bearer", "expires_in": auth.ACCESS_TOKEN_EXPIRE_MINUTES*60*1000}
+    return {"access_token": access_token,
+            "token_type": "bearer",
+            "expires_in": auth.ACCESS_TOKEN_EXPIRE_MINUTES*60*1000,
+            "refresh_token": refresh_token}
 
 
 def authenticate_user(email: str, password: str, db: Session):
@@ -137,8 +137,8 @@ def authenticate_user(email: str, password: str, db: Session):
 
 
 @app.post("/refreshtoken", response_model=schemas.Token)
-async def refreshtoken(form_data: schemas.RefreshToken, response: Response, db: Session = Depends(get_db)):
-    username, admin = validate_token(form_data.token, db)
+async def refreshtoken(form_data: schemas.RequestAccessToken, db: Session = Depends(get_db)):
+    username, admin = validate_token(form_data.refresh_token, db)
     if not username:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -149,7 +149,6 @@ async def refreshtoken(form_data: schemas.RefreshToken, response: Response, db: 
 
     access_token = auth.create_access_token(
         data={"sub": username, "admin": admin},
-        db=db,
         expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer", "expires_in": auth.ACCESS_TOKEN_EXPIRE_MINUTES*60*1000}
@@ -158,17 +157,18 @@ async def refreshtoken(form_data: schemas.RefreshToken, response: Response, db: 
 def validate_token(token, db: Session):
     db_token = crud.get_refresh_token(db, refresh_token=token)
     if not db_token:
-        return False
+        return False, False
 
     username = auth.verify_token(token)
     if not username:
-        return False
+        return False, False
     return username
 
 
 @app.delete("/logout")
-def delete_refresh_token():
-    pass
+async def delete_refresh_token(form_data: schemas.RequestAccessToken, db: Session = Depends(get_db)):
+    crud.delete_refresh_token(db, refresh_token=form_data.refresh_token)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 # Routes
