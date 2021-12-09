@@ -10,7 +10,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from . import crud, models, schemas, auth, mail, payments
+from . import crud, models, schemas, auth, mail
 import uuid
 from .database import SessionLocal, engine
 from . import example_entities
@@ -145,15 +145,15 @@ async def refreshtoken(form_data: schemas.RequestAccessToken, db: Session = Depe
     return {"access_token": access_token, "token_type": "bearer", "expires_in": auth.ACCESS_TOKEN_EXPIRE_MINUTES*60*1000}
 
 
-def validate_token(token, db: Session):
+def validate_token(token: str, db: Session):
     db_token = crud.get_refresh_token(db, refresh_token=token)
     if not db_token:
         return False, False
 
-    username = auth.verify_token(token)
-    if not username:
+    userinfo = auth.verify_token(token)
+    if not userinfo:
         return False, False
-    return username
+    return userinfo
 
 
 @app.delete("/logout")
@@ -230,16 +230,6 @@ async def cancel_flight(data: schemas.TicketID, current_user: schemas.User = Dep
 
 
 # Experimental
-@app.post("/order")
-async def create_order(data: schemas.FlightID, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
-    flight = crud.get_flight(db=db, flight_id=data.flight_id)
-    return payments.create_order.create_order(flight=flight, user=current_user)
-
-
-@app.post("/capture")
-async def capture_order(data: schemas.OrderID, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
-    return payments.capture_order.capture_order(data.order_id)
-
 
 @app.post("/exampleentities")
 async def create_example_entities(db: Session = Depends(get_db)):

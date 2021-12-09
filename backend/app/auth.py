@@ -8,14 +8,16 @@ from sqlalchemy.orm import Session
 from . import schemas, crud, models
 from .database import SessionLocal, engine
 
+import os
+
 models.Base.metadata.create_all(bind=engine)
 
 # Secret key
 # Generate using: openssl rand -hex 32
-ACCESS_TOKEN_SECRET = "8a05ef39f6ae53dab9d38eb853d6bb6f58def06e3adf3118a62031c3e830ea86"
-REFRESH_TOKEN_SECRET = "0f074144cd24f703f0da7fa94791c96324a05306d35328feb379a0c166c700c7"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 0.25
+ACCESS_TOKEN_SECRET = os.getenv('ACCESS_TOKEN_SECRET')
+REFRESH_TOKEN_SECRET = os.getenv('REFRESH_TOKEN_SECRET')
+ALGORITHM = os.getenv('ALGORITHM')
+ACCESS_TOKEN_EXPIRE_MINUTES = float(os.getenv('ACCESS_TOKEN_EXPIRE_MINUTES'))
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -99,7 +101,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         token_data = schemas.TokenData(username=username)
     except JWTError:
         raise credentials_exception
-    user = crud.read_user_by_email(db, token_data.username)
+    user = crud.get_user_by_email(db, token_data.username)
     if user is None:
         raise credentials_exception
     return user

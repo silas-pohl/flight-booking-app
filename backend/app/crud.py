@@ -103,6 +103,8 @@ def delete_flight(db: Session, flight_id: uuid.UUID):
 
     get_flight(db, flight_id=flight_id)
 
+    db.query(models.Ticket).filter(
+        models.Ticket.flight_id == flight_id).delete()
     db.query(models.Flight).filter(models.Flight.id == flight_id).delete()
     db.commit()
     return schemas.FlightID(flight_id=flight_id)

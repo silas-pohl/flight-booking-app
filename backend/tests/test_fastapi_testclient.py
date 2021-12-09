@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from fastapi.testclient import TestClient
 from unittest import mock
-from app import main, schemas, auth
+from app import main, schemas, auth, models
 from fastapi import HTTPException, status
 
 import pytest
@@ -18,6 +18,18 @@ def get_test_user():
         first_name="test",
         last_name="test",
         id="0deb3503-8efd-4f47-b842-44975098ff32",
+        is_active=True,
+        is_admin=False
+    )
+
+
+def get_test_user_with_hashed_password():
+    return models.User(
+        email="test@test.test",
+        first_name="test",
+        last_name="test",
+        id="0deb3503-8efd-4f47-b842-44975098ff32",
+        hashed_password="$2b$12$Y.a0OA0mjcWWlcearsG2COaxG5q9O0Ps/Wrc2nBNSOjJTJ5RA91dK",
         is_active=True,
         is_admin=False
     )
@@ -266,6 +278,14 @@ def raise_http_401_could_not_validate_credentials():
     )
 
 
+def get_http_401_could_not_validate_credentials():
+    return HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"}
+    )
+
+
 def raise_http_400_inactive_user():
     raise HTTPException(status_code=400, detail="Inactive user")
 
@@ -323,7 +343,7 @@ def test_verification_code_valid_input_data(mock_crud, mock_send_verification_co
     assert response_reset.status_code == 404
     assert response_reset.json() == {"detail": "Email not registered"}
 
-    mock_crud.get_user_by_email.return_value = get_test_user()
+    mock_crud.get_user_by_email.return_value = get_test_user_with_hashed_password()
 
     response_register = client.post(
         "/verificationcode", json={"email": valid_email, "action": "register"})
