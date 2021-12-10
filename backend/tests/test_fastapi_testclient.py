@@ -1,11 +1,11 @@
 from datetime import datetime, timedelta
 from fastapi.testclient import TestClient
-from sqlalchemy.orm import Session
 from unittest import mock
-from app import main, crud, schemas, mail, auth
+from app import main, schemas, auth, models
 from fastapi import HTTPException, status
 
 import pytest
+import uuid
 
 
 client = TestClient(main.app)
@@ -23,14 +23,26 @@ def get_test_user():
     )
 
 
+def get_test_user_with_hashed_password():
+    return models.User(
+        email="test@test.test",
+        first_name="test",
+        last_name="test",
+        id="0deb3503-8efd-4f47-b842-44975098ff32",
+        hashed_password="$2b$12$Y.a0OA0mjcWWlcearsG2COaxG5q9O0Ps/Wrc2nBNSOjJTJ5RA91dK",
+        is_active=True,
+        is_admin=False
+    )
+
+
 def get_test_user_json():
     return {
         "email": "test@test.test",
         "first_name": "test",
         "last_name": "test",
         "id": "0deb3503-8efd-4f47-b842-44975098ff32",
-        "is_active": "True",
-        "is_admin": "False"
+        "is_active": True,
+        "is_admin": False
     }
 
 
@@ -73,21 +85,25 @@ def get_test_users_json():
         "first_name": "test",
         "last_name": "test",
         "id": "0deb3503-8efd-4f47-b842-44975098ff32",
-        "is_active": "True",
-        "is_admin": "False"
+        "is_active": True,
+        "is_admin": False
     },
         {
         "email": "best@best.best",
         "first_name": "best",
         "last_name": "best",
         "id": "0deb3503-8efd-4f47-b842-44975098ff45",
-        "is_active": "True",
-        "is_admin": "True"
+        "is_active": True,
+        "is_admin": True
     }]
 
 
 def get_access_token():
     return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJwYXltZW50cy5mbGlnaHQuYm9va2luZ0BnbWFpbC5jb20iLCJhZG1pbiI6ZmFsc2UsImV4cCI6MTYzODU1MDI4N30.pcjYDatsOw7rtbOl36s0aruAaKwl6dWYPHrxR94iI-A"
+
+
+def get_refresh_token():
+    return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0QHRlc3QudGVzdCJ9.O3JxzSUwBBSS7LOFUWPfJTcBRUSo_F48z_TiNGkFyJw"
 
 
 def get_test_verification_entry():
@@ -262,6 +278,14 @@ def raise_http_401_could_not_validate_credentials():
     )
 
 
+def get_http_401_could_not_validate_credentials():
+    return HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"}
+    )
+
+
 def raise_http_400_inactive_user():
     raise HTTPException(status_code=400, detail="Inactive user")
 
@@ -295,7 +319,7 @@ def get_http_422_invalid_id_format(id_type: str):
 @ mock.patch("app.main.crud")
 def test_verification_code_valid_input_data(mock_crud, mock_send_verification_code, verification_entry):
 
-    mock_crud.read_user_by_email.return_value = None
+    mock_crud.get_user_by_email.return_value = None
     mock_crud.delete_expired_verification_records.return_value = None
     mock_crud.read_verification_record.return_value = verification_entry
     mock_crud.create_verification_record.return_value = None
@@ -319,7 +343,7 @@ def test_verification_code_valid_input_data(mock_crud, mock_send_verification_co
     assert response_reset.status_code == 404
     assert response_reset.json() == {"detail": "Email not registered"}
 
-    mock_crud.read_user_by_email.return_value = get_test_user()
+    mock_crud.get_user_by_email.return_value = get_test_user_with_hashed_password()
 
     response_register = client.post(
         "/verificationcode", json={"email": valid_email, "action": "register"})
@@ -488,12 +512,16 @@ def test_register_invalid_verification_code(mock_crud):
 
 # /login
 @ mock.patch("app.main.auth.create_access_token")
-@ mock.patch("app.main.authenticate_user")
-def test_login_valid_login(mock_authenticate_user, mock_create_access_token):
-    mock_authenticate_user.return_value = get_test_user()
-    mock_create_access_token.return_value = get_access_token()
+@ mock.patch("app.main.auth.create_refresh_token")
+@ mock.patch("app.main.auth.authenticate_user")
+def test_login_valid_login(mock_auth_authenticate_user, mock_auth_create_refresh_token, mock_auth_create_access_token):
+    mock_auth_authenticate_user.return_value = get_test_user()
+    mock_auth_create_refresh_token.return_value = get_refresh_token()
+    mock_auth_create_access_token.return_value = get_access_token()
 
+    refresh_token = get_refresh_token()
     access_token = get_access_token()
+    refresh_token = get_refresh_token()
     valid_username = get_valid_test_email()
     valid_password = get_valid_password()
 
@@ -503,12 +531,12 @@ def test_login_valid_login(mock_authenticate_user, mock_create_access_token):
 
     assert response_login.status_code == 200
     assert response_login.json() == {
-        "access_token": access_token, "token_type": "bearer", "expires_in": 900000}
+        "access_token": access_token, "token_type": "bearer", "expires_in": auth.ACCESS_TOKEN_EXPIRE_MINUTES*60*1000, "refresh_token": refresh_token}
 
 
-@ mock.patch("app.main.authenticate_user")
-def test_login_non_matching_credentials(mock_authenticate_user):
-    mock_authenticate_user.return_value = None
+@ mock.patch("app.main.auth.authenticate_user")
+def test_login_non_matching_credentials(mock_auth_authenticate_user):
+    mock_auth_authenticate_user.return_value = None
 
     valid_username = get_valid_test_email()
     valid_password = get_valid_password()
@@ -526,8 +554,10 @@ def test_login_non_matching_credentials(mock_authenticate_user):
 # /me
 def test_me():
 
-    user = get_test_user()
     main.app.dependency_overrides[auth.get_current_active_user] = get_test_user
+
+    user = get_test_user()
+
     response_me = client.get("/me")
 
     assert response_me.status_code == 200
@@ -540,7 +570,7 @@ def test_me():
     main.app.dependency_overrides = {}
 
 
-def test_me_unauthorized():
+def test_me_unauthenticated():
 
     main.app.dependency_overrides[auth.get_current_active_user] = raise_http_401_could_not_validate_credentials
 
@@ -585,7 +615,7 @@ def test_me_tickets(mock_crud_get_user_tickets):
     main.app.dependency_overrides = {}
 
 
-def test_me_tickets_unauthorized():
+def test_me_tickets_unauthenticated():
 
     main.app.dependency_overrides[auth.get_current_active_user] = raise_http_401_could_not_validate_credentials
 
@@ -671,7 +701,7 @@ def test_me_tickets_tickets_id_invalid_id_format():
     main.app.dependency_overrides = {}
 
 
-def test_me_tickets_ticket_id_unauthorized():
+def test_me_tickets_ticket_id_unauthenticated():
 
     main.app.dependency_overrides[auth.get_current_active_user] = raise_http_401_could_not_validate_credentials
 
@@ -719,7 +749,7 @@ def test_airports(mock_crud_get_airports):
     main.app.dependency_overrides = {}
 
 
-def test_airports_unauthorized():
+def test_airports_unauthenticated():
 
     main.app.dependency_overrides[auth.get_current_active_user] = raise_http_401_could_not_validate_credentials
 
@@ -757,7 +787,7 @@ def test_airports_airport_id(mock_crud_get_airport):
     mock_crud_get_airport.return_value = airport
 
     response_airports = client.get(
-        "/airports/9407584e-18b4-4023-86b1-884cc21ec647")
+        f"/airports/{airport.id}")
 
     assert response_airports.status_code == 200
     assert response_airports.json() == airport_json
@@ -804,7 +834,7 @@ def test_airports_airport_id_invalid_id_format():
     main.app.dependency_overrides = {}
 
 
-def test_airports_airport_id_unauthorized():
+def test_airports_airport_id_unauthenticated():
 
     main.app.dependency_overrides[auth.get_current_active_user] = raise_http_401_could_not_validate_credentials
 
@@ -852,7 +882,7 @@ def test_flights(mock_crud_get_all_flights):
     main.app.dependency_overrides = {}
 
 
-def test_flights_unauthorized():
+def test_flights_unautenticated():
 
     main.app.dependency_overrides[auth.get_current_active_user] = raise_http_401_could_not_validate_credentials
 
@@ -891,7 +921,7 @@ def test_flights_flight_id(mock_crud_get_flight):
     mock_crud_get_flight.return_value = flight
 
     response_flights = client.get(
-        "/flights/20453064-2468-48ef-896f-b4a2513973a3")
+        f"/flights/{flight.id}")
 
     assert response_flights.status_code == 200
     assert response_flights.json() == flight_json
@@ -938,7 +968,7 @@ def test_flights_flight_id_invalid_id_format():
     main.app.dependency_overrides = {}
 
 
-def test_flights_flight_id_unauthorized():
+def test_flights_flight_id_unauthenticated():
 
     main.app.dependency_overrides[auth.get_current_active_user] = raise_http_401_could_not_validate_credentials
 
@@ -1040,7 +1070,7 @@ def test_me_booking_flight_id_invalid_id_format():
     main.app.dependency_overrides = {}
 
 
-def test_me_booking_unauthorized():
+def test_me_booking_unauthenticated():
 
     main.app.dependency_overrides[auth.get_current_active_user] = raise_http_401_could_not_validate_credentials
 
@@ -1144,7 +1174,7 @@ def test_me_cancellation_ticket_id_invalid_id_format():
     main.app.dependency_overrides = {}
 
 
-def test_me_cancellation_unauthorized():
+def test_me_cancellation_unauthenticated():
 
     main.app.dependency_overrides[auth.get_current_active_user] = raise_http_401_could_not_validate_credentials
 
@@ -1175,7 +1205,341 @@ def test_me_cancellation_inactive():
 
 # admin endpoints
 # /flights
+@mock.patch("app.main.crud.create_flight")
+def test_flights_post(mock_crud_create_flight):
+
+    main.app.dependency_overrides[auth.get_current_active_admin_user] = get_test_admin_user
+
+    flight = get_flight()
+    flight_json = get_flight_json()
+    flight_json_no_id = get_flight_json()
+    flight_json_no_id.pop("id")
+
+    mock_crud_create_flight.return_value = flight
+
+    reponse_flights_post = client.post("/flights", json=flight_json_no_id)
+
+    assert reponse_flights_post.status_code == 200
+    assert reponse_flights_post.json() == flight_json
+
+    main.app.dependency_overrides = {}
+
+
+def test_flights_post_arrival_time_earlier_than_departure_time():
+
+    main.app.dependency_overrides[auth.get_current_active_admin_user] = get_test_admin_user
+
+    flight = get_flight()
+    flight.arrival_time_utc = flight.departure_time_utc - timedelta(seconds=1)
+    flight_json_no_id = {
+        "arrival_time_utc": str(flight.arrival_time_utc),
+        "destination_airport_id": str(flight.destination_airport_id),
+        "seats": flight.seats,
+        "departure_time_utc": str(flight.departure_time_utc),
+        "departure_airport_id": str(flight.departure_airport_id),
+        "ticket_price_dollars": flight.ticket_price_dollars
+    }
+
+    reponse_flights_post = client.post("/flights", json=flight_json_no_id)
+
+    assert reponse_flights_post.status_code == 422
+    assert reponse_flights_post.json(
+    ) == {"detail": "Arrival time must not be earlier than departure time."}
+
+    main.app.dependency_overrides = {}
+
+
+def test_flights_post_unknown_destination_airport():
+
+    main.app.dependency_overrides[auth.get_current_active_admin_user] = get_test_admin_user
+
+    flight = get_flight()
+    flight_json_no_id = {
+        "arrival_time_utc": str(flight.arrival_time_utc),
+        "destination_airport_id": str(uuid.uuid4()),
+        "seats": flight.seats,
+        "departure_time_utc": str(flight.departure_time_utc),
+        "departure_airport_id": str(flight.departure_airport_id),
+        "ticket_price_dollars": flight.ticket_price_dollars
+    }
+
+    reponse_flights_post = client.post("/flights", json=flight_json_no_id)
+
+    assert reponse_flights_post.status_code == 404
+    assert reponse_flights_post.json(
+    ) == {"detail": "Object not found"}
+
+    main.app.dependency_overrides = {}
+
+
+def test_flights_post_unknown_departure_airport():
+
+    main.app.dependency_overrides[auth.get_current_active_admin_user] = get_test_admin_user
+
+    flight = get_flight()
+    flight_json_no_id = {
+        "arrival_time_utc": str(flight.arrival_time_utc),
+        "destination_airport_id": str(flight.destination_airport_id),
+        "seats": flight.seats,
+        "departure_time_utc": str(flight.departure_time_utc),
+        "departure_airport_id": str(uuid.uuid4()),
+        "ticket_price_dollars": flight.ticket_price_dollars
+    }
+
+    reponse_flights_post = client.post("/flights", json=flight_json_no_id)
+
+    assert reponse_flights_post.status_code == 404
+    assert reponse_flights_post.json(
+    ) == {"detail": "Object not found"}
+
+    main.app.dependency_overrides = {}
+
+
+def test_flights_post_negative_seats():
+
+    main.app.dependency_overrides[auth.get_current_active_admin_user] = get_test_admin_user
+
+    flight = get_flight()
+    flight_json_no_id = {
+        "arrival_time_utc": str(flight.arrival_time_utc),
+        "destination_airport_id": str(flight.destination_airport_id),
+        "seats": -1,
+        "departure_time_utc": str(flight.departure_time_utc),
+        "departure_airport_id": str(flight.departure_airport_id),
+        "ticket_price_dollars": flight.ticket_price_dollars
+    }
+
+    reponse_flights_post = client.post("/flights", json=flight_json_no_id)
+
+    assert reponse_flights_post.status_code == 422
+    assert reponse_flights_post.json(
+    ) == {"detail": "Number of available seats must be greater than or equal to zero."}
+
+    main.app.dependency_overrides = {}
+
+
+def test_flights_post_negative_ticket_price():
+
+    main.app.dependency_overrides[auth.get_current_active_admin_user] = get_test_admin_user
+
+    flight = get_flight()
+    flight_json_no_id = {
+        "arrival_time_utc": str(flight.arrival_time_utc),
+        "destination_airport_id": str(flight.destination_airport_id),
+        "seats": flight.seats,
+        "departure_time_utc": str(flight.departure_time_utc),
+        "departure_airport_id": str(flight.departure_airport_id),
+        "ticket_price_dollars": -1
+    }
+
+    reponse_flights_post = client.post("/flights", json=flight_json_no_id)
+
+    assert reponse_flights_post.status_code == 422
+    assert reponse_flights_post.json(
+    ) == {"detail": "Ticket price must be greater than or equal to zero."}
+
+    main.app.dependency_overrides = {}
+
+
+def test_flights_post_unauthenticated():
+
+    main.app.dependency_overrides[auth.get_current_active_admin_user] = raise_http_401_could_not_validate_credentials
+
+    flight_json_no_id = get_flight_json()
+    flight_json_no_id.pop("id")
+
+    response_flights_post = client.post(
+        "/flights", json=flight_json_no_id)
+    assert response_flights_post.status_code == 401
+    assert response_flights_post.json() == {
+        "detail": "Could not validate credentials"}
+    assert response_flights_post.headers["WWW-Authenticate"] == "Bearer"
+
+    main.app.dependency_overrides = {}
+
+
+def test_flights_post_unauthorized():
+
+    main.app.dependency_overrides[auth.get_current_active_admin_user] = raise_http_401_unauthorized
+
+    flight_json_no_id = get_flight_json()
+    flight_json_no_id.pop("id")
+
+    response_flights_post = client.post(
+        "/flights", json=flight_json_no_id)
+    assert response_flights_post.status_code == 401
+    assert response_flights_post.json() == {
+        "detail": "Unauthorized"}
+
+    main.app.dependency_overrides = {}
+
+
+def test_flight_post_inactive():
+
+    main.app.dependency_overrides[auth.get_current_active_admin_user] = raise_http_400_inactive_user
+
+    flight_json_no_id = get_flight_json()
+    flight_json_no_id.pop("id")
+
+    response_flights_post = client.post(
+        "/flights", json=flight_json_no_id)
+
+    assert response_flights_post.status_code == 400
+    assert response_flights_post.json() == {
+        "detail": "Inactive user"}
+
+    main.app.dependency_overrides = {}
+
 
 # /flights/flight_id
+@ mock.patch("app.main.crud.delete_flight")
+def test_flights_flight_id_delete(mock_crud_delete_flight):
+
+    main.app.dependency_overrides[auth.get_current_active_user] = get_test_admin_user
+
+    flight = get_flight()
+
+    mock_crud_delete_flight.return_value = schemas.FlightID(
+        flight_id=flight.id)
+
+    response_flights_delete = client.delete(
+        f"/flights/{flight.id}")
+
+    assert response_flights_delete.status_code == 200
+    assert response_flights_delete.json() == {
+        "flight_id": f"{flight.id}"}
+
+    main.app.dependency_overrides = {}
+
+
+@ mock.patch("app.main.crud.delete_flight")
+def test_flights_flight_id_delete_id_not_found(mock_crud_delete_flight):
+
+    main.app.dependency_overrides[auth.get_current_active_user] = get_test_admin_user
+
+    mock_crud_delete_flight.side_effect = get_http_404_object_not_found()
+
+    response_flights_delete = client.delete(
+        "/flights/20453064-2468-48ef-896f-b4a251394444")
+
+    assert response_flights_delete.status_code == 404
+    assert response_flights_delete.json() == {
+        "detail": "Object not found"}
+
+    main.app.dependency_overrides = {}
+
+
+def test_flights_flight_id_delete_invalid_id_format():
+
+    main.app.dependency_overrides[auth.get_current_active_user] = get_test_admin_user
+
+    response_flights_delete = client.delete("/flights/1234")
+
+    assert response_flights_delete.status_code == 422
+    assert response_flights_delete.json() == {"detail": [
+        {
+            "loc": [
+                "path",
+                "flight_id"
+            ],
+            "msg": "value is not a valid uuid",
+            "type": "type_error.uuid"
+        }
+    ]}
+
+    main.app.dependency_overrides = {}
+
+
+def test_flights_flight_id_delete_unauthenticated():
+
+    main.app.dependency_overrides[auth.get_current_active_admin_user] = raise_http_401_could_not_validate_credentials
+
+    response_flights_delete = client.delete(
+        "/flights/20453064-2468-48ef-896f-b4a251394444")
+    assert response_flights_delete.status_code == 401
+    assert response_flights_delete.json() == {
+        "detail": "Could not validate credentials"}
+    assert response_flights_delete.headers["WWW-Authenticate"] == "Bearer"
+
+    main.app.dependency_overrides = {}
+
+
+def test_flights_flight_id_delete_unauthorized():
+
+    main.app.dependency_overrides[auth.get_current_active_admin_user] = raise_http_401_unauthorized
+
+    response_flights_delete = client.delete(
+        "/flights/20453064-2468-48ef-896f-b4a251394444")
+    assert response_flights_delete.status_code == 401
+    assert response_flights_delete.json() == {
+        "detail": "Unauthorized"}
+
+    main.app.dependency_overrides = {}
+
+
+def test_flights_flight_id_delete_inactive():
+
+    main.app.dependency_overrides[auth.get_current_active_admin_user] = raise_http_400_inactive_user
+
+    response_flights_delete = client.delete(
+        "/flights/20453064-2468-48ef-896f-b4a251394444")
+
+    assert response_flights_delete.status_code == 400
+    assert response_flights_delete.json() == {
+        "detail": "Inactive user"}
+
 
 # /users
+@mock.patch("app.main.crud.get_users")
+def test_users(mock_crud_get_users):
+
+    main.app.dependency_overrides[auth.get_current_active_admin_user] = get_test_admin_user
+
+    users = get_test_users()
+    users_json = get_test_users_json()
+
+    mock_crud_get_users.return_value = users
+
+    response_users = client.get(
+        "/users")
+    assert response_users.status_code == 200
+    assert response_users.json() == users_json
+
+    main.app.dependency_overrides = {}
+
+
+def test_users_unauthenticated():
+
+    main.app.dependency_overrides[auth.get_current_active_admin_user] = raise_http_401_could_not_validate_credentials
+
+    response_users = client.get(
+        "/users")
+    assert response_users.status_code == 401
+    assert response_users.json() == {
+        "detail": "Could not validate credentials"}
+    assert response_users.headers["WWW-Authenticate"] == "Bearer"
+
+    main.app.dependency_overrides = {}
+
+
+def test_users_unauthorized():
+
+    main.app.dependency_overrides[auth.get_current_active_admin_user] = raise_http_401_unauthorized
+
+    response_users = client.get("/users")
+    assert response_users.status_code == 401
+    assert response_users.json() == {
+        "detail": "Unauthorized"}
+
+    main.app.dependency_overrides = {}
+
+
+def test_users_inactive():
+
+    main.app.dependency_overrides[auth.get_current_active_admin_user] = raise_http_400_inactive_user
+
+    response_users = client.get("/users")
+
+    assert response_users.status_code == 400
+    assert response_users.json() == {
+        "detail": "Inactive user"}

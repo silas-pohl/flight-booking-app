@@ -5,12 +5,12 @@ import re
 from random import SystemRandom
 from datetime import timedelta, datetime
 from sqlalchemy.sql.sqltypes import DateTime
-from fastapi import Depends, FastAPI, HTTPException, status, Response
+from fastapi import Depends, FastAPI, HTTPException, status, Response, Cookie
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from . import crud, models, schemas, auth, mail, payments
+from . import crud, models, schemas, auth, mail
 import uuid
 from .database import SessionLocal, engine
 from . import example_entities
@@ -50,9 +50,9 @@ def verificationcode(data: schemas.EmailVerification, db: Session = Depends(get_
         raise HTTPException(status_code=422, detail="Invalid request data")
 
     # Check if email already exists for register or not exists for login and reset
-    if data.action == 'register' and crud.read_user_by_email(db, data.email):
+    if data.action == 'register' and crud.get_user_by_email(db, data.email):
         raise HTTPException(status_code=409, detail="Email already registered")
-    elif data.action in ['login', 'reset'] and crud.read_user_by_email(db, data.email) is None:
+    elif data.action in ['login', 'reset'] and crud.get_user_by_email(db, data.email) is None:
         raise HTTPException(status_code=404, detail="Email not registered")
 
     # Delete all records older than 5mins from verification_records table
@@ -91,9 +91,11 @@ def register(data: schemas.RegisterData, db: Session = Depends(get_db)):
         raise HTTPException(status_code=422, detail="Invalid request data")
 
     # Check if email and verificaion code not match
-    verification_record = crud.read_verification_record(db, data.email, 'register')
+    verification_record = crud.read_verification_record(
+        db, data.email, 'register')
     if not (verification_record) or int(data.verification_code) != verification_record.verification_code:
-        raise HTTPException(status_code=403, detail="Incorrect verification code")
+        raise HTTPException(
+            status_code=403, detail="Incorrect verification code")
 
     # Create user, delete verification record and mirror request data
     crud.create_user(db, data.email, data.password,
@@ -101,37 +103,83 @@ def register(data: schemas.RegisterData, db: Session = Depends(get_db)):
     crud.delete_verification_record(db, data.email, 'register')
     return data
 
+
 @app.post("/login", response_model=schemas.Token)
 async def login(form_data: schemas.TokenLogin, response: Response, db: Session = Depends(get_db)):
-    user = authenticate_user(form_data.email, form_data.password, db)
+    user = auth.authenticate_user(form_data.email, form_data.password, db)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
+
     access_token = auth.create_access_token(
-        data={"sub": user.email, "admin": user.is_admin}, expires_delta=access_token_expires
+        data={"sub": user.email, "admin": user.is_admin},
+        expires_delta=timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
     )
-    response.set_cookie(key="refresh_token", value="temp", httponly=True)
-    return {"access_token": access_token, "token_type": "bearer", "expires_in": auth.ACCESS_TOKEN_EXPIRE_MINUTES*60*1000}
+    refresh_token = auth.create_refresh_token(
+      data={"sub": user.email, "admin": user.is_admin}, 
+      expires_delta=timedelta(days=auth.ACCESS_TOKEN_EXPIRE_MINUTES+1),
+      db=db
+    )
+    
+    
+    response.set_cookie(key="refresh_token", value=refresh_token, httponly=True)
+    
+    return {"access_token": access_token,
+            "token_type": "bearer",
+            "expires_in": auth.ACCESS_TOKEN_EXPIRE_MINUTES*60*1000}
 
 
-def authenticate_user(email: str, password: str, db: Session):
-    user = crud.read_user_by_email(db, email=email)
-    if not user:
-        return False
-    if not auth.verify_password(password, user.hashed_password):
-        return False
-    return user
+@app.get("/refreshtoken", response_model=schemas.Token)
+async def refreshtoken(response: Response, refresh_token: str = Cookie(None), db: Session = Depends(get_db)):
+    email, admin = validate_token(refresh_token, db)
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid refresh token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    access_token = auth.create_access_token(
+        data={"sub": email, "admin": admin},
+        expires_delta=timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
+    )
+    new_refresh_token = auth.create_refresh_token(
+      data={"sub": email, "admin": admin}, 
+      expires_delta=timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES+1),
+      db=db
+    )
+
+    response.set_cookie(key="refresh_token", value=new_refresh_token, httponly=True)
+    
+    crud.delete_refresh_token(db, refresh_token=refresh_token)
+
+    return {"access_token": access_token, 
+            "token_type": "bearer", 
+            "expires_in": auth.ACCESS_TOKEN_EXPIRE_MINUTES*60*1000}
 
 
-@app.post("/refreshtoken")
-async def refreshtoken(db: Session = Depends(get_db)):
-    pass
+def validate_token(token: str, db: Session):
+    db_token = crud.get_refresh_token(db, refresh_token=token)
+    if not db_token:
+        return False, False
+
+    userinfo = auth.verify_token(token)
+    if not userinfo:
+        return False, False
+    return userinfo
+
+
+@app.delete("/logout")
+async def delete_refresh_token(refresh_token: str = Cookie(None), db: Session = Depends(get_db)):
+    crud.delete_refresh_token(db, refresh_token=refresh_token)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
 
 # Routes
+
 
 @app.get("/me", response_model=schemas.UserBase)
 async def read_users_me(current_user: schemas.User = Depends(auth.get_current_active_user)):
@@ -198,16 +246,6 @@ async def cancel_flight(data: schemas.TicketID, current_user: schemas.User = Dep
 
 
 # Experimental
-@app.post("/order")
-async def create_order(data: schemas.FlightID, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
-    flight = crud.get_flight(db=db, flight_id=data.flight_id)
-    return payments.create_order.create_order(flight=flight, user=current_user)
-
-
-@app.post("/capture")
-async def capture_order(data: schemas.OrderID, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
-    return payments.capture_order.capture_order(data.order_id)
-
 
 @app.post("/exampleentities")
 async def create_example_entities(db: Session = Depends(get_db)):
@@ -223,6 +261,16 @@ async def get_all_users(current_user: schemas.User = Depends(auth.get_current_ac
 
 @app.post("/flights", response_model=schemas.Flight)
 async def create_flight(flight: schemas.FlightBase, current_user: schemas.User = Depends(auth.get_current_active_admin_user), db: Session = Depends(get_db)):
+    if flight.arrival_time_utc < flight.departure_time_utc:
+        raise HTTPException(
+            status_code=422, detail="Arrival time must not be earlier than departure time.")
+    if flight.seats < 0:
+        raise HTTPException(
+            status_code=422, detail="Number of available seats must be greater than or equal to zero.")
+    if flight.ticket_price_dollars < 0.0:
+        raise HTTPException(
+            status_code=422, detail="Ticket price must be greater than or equal to zero.")
+
     return crud.create_flight(db, flight)
 
 

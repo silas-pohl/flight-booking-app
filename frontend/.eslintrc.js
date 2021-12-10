@@ -1,33 +1,27 @@
 module.exports = {
-  parser: '@typescript-eslint/parser', // add the TypeScript parser
-  plugins: [
-      'svelte3',
-      '@typescript-eslint' // add the TypeScript plugin
-  ],
-  overrides: [ // this stays the same
+  parser: '@typescript-eslint/parser',
+  extends: ['eslint:recommended', 'plugin:@typescript-eslint/recommended', 'plugin:@typescript-eslint/recommended-requiring-type-checking'],
+  parserOptions: {
+    ecmaVersion: 2020,
+    sourceType: 'module',
+    tsconfigRootDir: __dirname,
+    project: ['./tsconfig.json'],
+    extraFileExtensions: ['.svelte'],
+  },
+  env: {
+    es6: true,
+    browser: true,
+  },
+  overrides: [
     {
       files: ['*.svelte'],
-      parserOptions: { // add these parser options
-          tsconfigRootDir: __dirname,
-          project: ['./tsconfig.json'],
-          extraFileExtensions: ['.svelte'],
-      },
-      extends: [ // then, enable whichever type-aware rules you want to use
-          'eslint:recommended',
-          'plugin:@typescript-eslint/recommended',
-          'plugin:@typescript-eslint/recommended-requiring-type-checking'
-      ],
       processor: 'svelte3/svelte3',
-      rules: {
-        "no-useless-escape": "off",
-        "no-undef": "off",
-        "@typescript-eslint/no-inferrable-types": "off",
-        "@typescript-eslint/no-unsafe-argument": "off",
-        "@typescript-eslint/no-unsafe-member-access": "off"
-      },
-    }
+      rules: { 'no-undef': 'off' },
+    },
   ],
   settings: {
-    'svelte3/typescript': () => require('typescript'), // pass the TypeScript package to the Svelte plugin
-  }
+    'svelte3/typescript': require('typescript'),
+  },
+  plugins: ['svelte3', '@typescript-eslint'],
+  ignorePatterns: ['node_modules', 'public/build', '.eslintrc.js', 'prettier.config.js'],
 };
