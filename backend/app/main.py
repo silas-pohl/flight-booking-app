@@ -119,14 +119,14 @@ async def login(form_data: schemas.TokenLogin, response: Response, db: Session =
         expires_delta=timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
     )
     refresh_token = auth.create_refresh_token(
-      data={"sub": user.email, "admin": user.is_admin}, 
-      expires_delta=timedelta(days=auth.ACCESS_TOKEN_EXPIRE_MINUTES+1),
-      db=db
+        data={"sub": user.email, "admin": user.is_admin},
+        expires_delta=timedelta(days=auth.ACCESS_TOKEN_EXPIRE_MINUTES+1),
+        db=db
     )
-    
-    
-    response.set_cookie(key="refresh_token", value=refresh_token, httponly=True)
-    
+
+    response.set_cookie(key="refresh_token",
+                        value=refresh_token, httponly=True)
+
     return {"access_token": access_token,
             "token_type": "bearer",
             "expires_in": auth.ACCESS_TOKEN_EXPIRE_MINUTES*60*1000}
@@ -147,17 +147,18 @@ async def refreshtoken(response: Response, refresh_token: str = Cookie(None), db
         expires_delta=timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
     )
     new_refresh_token = auth.create_refresh_token(
-      data={"sub": email, "admin": admin}, 
-      expires_delta=timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES+1),
-      db=db
+        data={"sub": email, "admin": admin},
+        expires_delta=timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES+1),
+        db=db
     )
 
-    response.set_cookie(key="refresh_token", value=new_refresh_token, httponly=True)
-    
+    response.set_cookie(key="refresh_token",
+                        value=new_refresh_token, httponly=True)
+
     crud.delete_refresh_token(db, refresh_token=refresh_token)
 
-    return {"access_token": access_token, 
-            "token_type": "bearer", 
+    return {"access_token": access_token,
+            "token_type": "bearer",
             "expires_in": auth.ACCESS_TOKEN_EXPIRE_MINUTES*60*1000}
 
 
@@ -167,7 +168,7 @@ def validate_token(token: str, db: Session):
         return False, False
 
     userinfo = auth.verify_token(token)
-    if not userinfo:
+    if not userinfo[0]:
         return False, False
     return userinfo
 
