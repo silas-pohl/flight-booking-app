@@ -5,7 +5,7 @@ import re
 from random import SystemRandom
 from datetime import timedelta, datetime
 from sqlalchemy.sql.sqltypes import DateTime
-from fastapi import Depends, FastAPI, HTTPException, status, Response
+from fastapi import Depends, FastAPI, HTTPException, status, Response, Cookie
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -104,7 +104,7 @@ def register(data: schemas.RegisterData, db: Session = Depends(get_db)):
     return data
 
 
-@app.post("/login", response_model=schemas.RefreshToken)
+@app.post("/login", response_model=schemas.Token)
 async def login(form_data: schemas.TokenLogin, response: Response, db: Session = Depends(get_db)):
     user = auth.authenticate_user(form_data.email, form_data.password, db)
     if not user:
@@ -113,36 +113,52 @@ async def login(form_data: schemas.TokenLogin, response: Response, db: Session =
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
 
     access_token = auth.create_access_token(
         data={"sub": user.email, "admin": user.is_admin},
-        expires_delta=access_token_expires
+        expires_delta=timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
     )
-    refresh_token = auth.create_refresh_token(data={"sub": user.email}, db=db)
-
+    refresh_token = auth.create_refresh_token(
+      data={"sub": user.email, "admin": user.is_admin}, 
+      expires_delta=timedelta(days=auth.ACCESS_TOKEN_EXPIRE_MINUTES+1),
+      db=db
+    )
+    
+    
+    response.set_cookie(key="refresh_token", value=refresh_token, httponly=True)
+    
     return {"access_token": access_token,
             "token_type": "bearer",
-            "expires_in": auth.ACCESS_TOKEN_EXPIRE_MINUTES*60*1000,
-            "refresh_token": refresh_token}
+            "expires_in": auth.ACCESS_TOKEN_EXPIRE_MINUTES*60*1000}
 
 
-@app.post("/refreshtoken", response_model=schemas.Token)
-async def refreshtoken(form_data: schemas.RequestAccessToken, db: Session = Depends(get_db)):
-    username, admin = validate_token(form_data.refresh_token, db)
-    if not username:
+@app.get("/refreshtoken", response_model=schemas.Token)
+async def refreshtoken(response: Response, refresh_token: str = Cookie(None), db: Session = Depends(get_db)):
+    email, admin = validate_token(refresh_token, db)
+    if not email:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid refresh token",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
 
     access_token = auth.create_access_token(
-        data={"sub": username, "admin": admin},
-        expires_delta=access_token_expires
+        data={"sub": email, "admin": admin},
+        expires_delta=timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
     )
-    return {"access_token": access_token, "token_type": "bearer", "expires_in": auth.ACCESS_TOKEN_EXPIRE_MINUTES*60*1000}
+    new_refresh_token = auth.create_refresh_token(
+      data={"sub": email, "admin": admin}, 
+      expires_delta=timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES+1),
+      db=db
+    )
+
+    response.set_cookie(key="refresh_token", value=new_refresh_token, httponly=True)
+    
+    crud.delete_refresh_token(db, refresh_token=refresh_token)
+
+    return {"access_token": access_token, 
+            "token_type": "bearer", 
+            "expires_in": auth.ACCESS_TOKEN_EXPIRE_MINUTES*60*1000}
 
 
 def validate_token(token: str, db: Session):
@@ -157,8 +173,8 @@ def validate_token(token: str, db: Session):
 
 
 @app.delete("/logout")
-async def delete_refresh_token(form_data: schemas.RequestAccessToken, db: Session = Depends(get_db)):
-    crud.delete_refresh_token(db, refresh_token=form_data.refresh_token)
+async def delete_refresh_token(refresh_token: str = Cookie(None), db: Session = Depends(get_db)):
+    crud.delete_refresh_token(db, refresh_token=refresh_token)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
