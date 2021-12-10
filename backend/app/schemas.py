@@ -12,6 +12,14 @@ class Token(BaseModel):
     expires_in: int
 
 
+class RefreshToken(Token):
+    refresh_token: str
+
+
+class RequestAccessToken(BaseModel):
+    refresh_token: str
+
+
 class TokenData(BaseModel):
     username: Optional[str] = None
 

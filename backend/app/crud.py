@@ -14,12 +14,15 @@ not_found_exception = HTTPException(
     detail="Object not found"
 )
 
+# ----------------------------------------------------------------------------------------------------------------------
+# USERS
+
 
 def get_user(db: Session, user_id: uuid.UUID):
     return db.query(models.User).filter(models.User.id == user_id).first()
 
 
-def read_user_by_email(db: Session, email: str):
+def get_user_by_email(db: Session, email: str):
     return db.query(models.User).filter(models.User.email == email).first()
 
 
@@ -35,6 +38,31 @@ def create_user(db: Session, email: str, password: str, first_name: str, last_na
     db.commit()
     db.refresh(db_user)
     return db_user
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Refresh tokens
+
+
+def add_refresh_token(db: Session, refresh_token: str):
+    db_token = models.RefreshTokens(token=refresh_token)
+    db.add(db_token)
+    db.commit()
+    db.refresh(db_token)
+    return db_token
+
+
+def get_refresh_token(db: Session, refresh_token: str):
+    return db.query(models.RefreshTokens).filter(models.RefreshTokens.token == refresh_token).first()
+
+
+def delete_refresh_token(db: Session, refresh_token: str):
+    db.query(models.RefreshTokens).filter(
+        models.RefreshTokens.token == refresh_token).delete()
+    db.commit()
+    return
+
+
+# ----------------------------------------------------------------------------------------------------------------------
 
 
 def get_airport(db: Session, airport_id: uuid.UUID):
@@ -60,6 +88,10 @@ def get_all_flights(db: Session, skip: int = 0, limit: int = 100):
 
 
 def create_flight(db: Session, flight: schemas.FlightBase):
+
+    get_airport(db, flight.departure_airport_id)
+    get_airport(db, flight.destination_airport_id)
+
     db_flight = models.Flight(**flight.dict())
     db.add(db_flight)
     db.commit()
@@ -68,6 +100,11 @@ def create_flight(db: Session, flight: schemas.FlightBase):
 
 
 def delete_flight(db: Session, flight_id: uuid.UUID):
+
+    get_flight(db, flight_id=flight_id)
+
+    db.query(models.Ticket).filter(
+        models.Ticket.flight_id == flight_id).delete()
     db.query(models.Flight).filter(models.Flight.id == flight_id).delete()
     db.commit()
     return schemas.FlightID(flight_id=flight_id)
