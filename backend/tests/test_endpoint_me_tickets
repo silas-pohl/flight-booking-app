@@ -1,0 +1,54 @@
+from unittest import mock
+import pytest
+import tests.test_entities as te
+from app import main, auth
+
+
+@ mock.patch("app.main.crud.get_user_tickets")
+def test_me_tickets(mock_crud_get_user_tickets):
+
+    te.setup()
+
+    main.app.dependency_overrides[auth.get_current_active_user] = te.get_test_user
+
+    tickets_json = te.get_tickets_json()
+    tickets = te.get_tickets()
+    mock_crud_get_user_tickets.return_value = tickets
+
+    response_me_tickets = te.client.get("/me/tickets")
+
+    assert response_me_tickets.status_code == 200
+    assert response_me_tickets.json() == tickets_json
+
+    te.teardown()
+
+
+def test_me_tickets_unauthenticated():
+
+    te.setup()
+
+    main.app.dependency_overrides[auth.get_current_active_user] = te.raise_http_401_could_not_validate_credentials
+
+    response_me_tickets = te.client.get("/me/tickets")
+
+    assert response_me_tickets.status_code == 401
+    assert response_me_tickets.json() == {
+        "detail": "Could not validate credentials"}
+    assert response_me_tickets.headers["WWW-Authenticate"] == "Bearer"
+
+    te.teardown()
+
+
+def test_me_tickets_inactive():
+
+    te.setup()
+
+    main.app.dependency_overrides[auth.get_current_active_user] = te.raise_http_400_inactive_user
+
+    response_me_tickets = te.client.get("/me/tickets")
+
+    assert response_me_tickets.status_code == 400
+    assert response_me_tickets.json() == {
+        "detail": "Inactive user"}
+
+    te.teardown()

@@ -5,8 +5,8 @@ from jose import JWTError, jwt
 from fastapi.security import OAuth2PasswordBearer
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from . import schemas, crud, models
-from .database import SessionLocal, engine
+from app import schemas, crud, models
+from app.database import SessionLocal, engine
 
 import os
 
@@ -72,9 +72,10 @@ def create_refresh_token(data: dict, expires_delta: Optional[timedelta], db: Ses
     else:
         expire = datetime.utcnow() + timedelta(minutes=15)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, REFRESH_TOKEN_SECRET, algorithm=ALGORITHM)
+    encoded_jwt = jwt.encode(
+        to_encode, REFRESH_TOKEN_SECRET, algorithm=ALGORITHM)
     if not crud.get_refresh_token(db, encoded_jwt):
-      crud.add_refresh_token(db, encoded_jwt)
+        crud.add_refresh_token(db, encoded_jwt)
     return encoded_jwt
 
 
