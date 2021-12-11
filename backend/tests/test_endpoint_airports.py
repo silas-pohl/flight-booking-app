@@ -1,12 +1,13 @@
 from unittest import mock
 
-import pytest
 import tests.test_entities as te
 from app import auth, main
 
 
 @ mock.patch("app.main.crud.get_airports")
 def test_airports(mock_crud_get_airports):
+
+    te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_user] = te.get_test_user
 
@@ -20,10 +21,12 @@ def test_airports(mock_crud_get_airports):
     assert response_airports.status_code == 200
     assert response_airports.json() == airports_json
 
-    main.app.dependency_overrides = {}
+    te.teardown()
 
 
 def test_airports_unauthenticated():
+
+    te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_user] = te.raise_http_401_could_not_validate_credentials
 
@@ -34,10 +37,12 @@ def test_airports_unauthenticated():
         "detail": "Could not validate credentials"}
     assert response_airports.headers["WWW-Authenticate"] == "Bearer"
 
-    main.app.dependency_overrides = {}
+    te.teardown()
 
 
 def test_airports_inactive():
+
+    te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_user] = te.raise_http_400_inactive_user
 
@@ -47,4 +52,4 @@ def test_airports_inactive():
     assert response_airports.json() == {
         "detail": "Inactive user"}
 
-    main.app.dependency_overrides = {}
+    te.teardown()

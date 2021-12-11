@@ -1,12 +1,13 @@
 from unittest import mock
 
-import pytest
 import tests.test_entities as te
 from app import auth, main, schemas
 
 
 @ mock.patch("app.main.crud.delete_flight")
 def test_flights_flight_id_delete(mock_crud_delete_flight):
+
+    te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_user] = te.get_test_admin_user
 
@@ -22,11 +23,13 @@ def test_flights_flight_id_delete(mock_crud_delete_flight):
     assert response_flights_delete.json() == {
         "flight_id": f"{flight.id}"}
 
-    main.app.dependency_overrides = {}
+    te.teardown()
 
 
 @ mock.patch("app.main.crud.delete_flight")
 def test_flights_flight_id_delete_id_not_found(mock_crud_delete_flight):
+
+    te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_user] = te.get_test_admin_user
 
@@ -39,10 +42,12 @@ def test_flights_flight_id_delete_id_not_found(mock_crud_delete_flight):
     assert response_flights_delete.json() == {
         "detail": "Object not found"}
 
-    main.app.dependency_overrides = {}
+    te.teardown()
 
 
 def test_flights_flight_id_delete_invalid_id_format():
+
+    te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_user] = te.get_test_admin_user
 
@@ -60,10 +65,12 @@ def test_flights_flight_id_delete_invalid_id_format():
         }
     ]}
 
-    main.app.dependency_overrides = {}
+    te.teardown()
 
 
 def test_flights_flight_id_delete_unauthenticated():
+
+    te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_admin_user] = te.raise_http_401_could_not_validate_credentials
 
@@ -74,10 +81,12 @@ def test_flights_flight_id_delete_unauthenticated():
         "detail": "Could not validate credentials"}
     assert response_flights_delete.headers["WWW-Authenticate"] == "Bearer"
 
-    main.app.dependency_overrides = {}
+    te.teardown()
 
 
 def test_flights_flight_id_delete_unauthorized():
+
+    te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_admin_user] = te.raise_http_401_unauthorized
 
@@ -87,10 +96,12 @@ def test_flights_flight_id_delete_unauthorized():
     assert response_flights_delete.json() == {
         "detail": "Unauthorized"}
 
-    main.app.dependency_overrides = {}
+    te.teardown()
 
 
 def test_flights_flight_id_delete_inactive():
+
+    te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_admin_user] = te.raise_http_400_inactive_user
 
@@ -100,3 +111,5 @@ def test_flights_flight_id_delete_inactive():
     assert response_flights_delete.status_code == 400
     assert response_flights_delete.json() == {
         "detail": "Inactive user"}
+
+    te.teardown()

@@ -1,13 +1,15 @@
 from unittest import mock
 from datetime import datetime, timedelta
 
-import pytest
 import tests.test_entities as te
 from app import auth, main
 
 
 @ mock.patch("app.main.crud")
 def me_cancellation(mock_crud):
+
+    te.setup()
+
     main.app.dependency_overrides[auth.get_current_active_user] = te.get_test_user
 
     ticket = te.get_ticket()
@@ -20,11 +22,14 @@ def me_cancellation(mock_crud):
     assert response_me_cancellation.status_code == 200
     assert response_me_cancellation.json() == {"ticket_id": str(ticket.id)}
 
-    main.app.dependency_overrides = {}
+    te.teardown()
 
 
 @ mock.patch("app.main.crud.get_user_ticket")
 def test_me_cancellation_less_than_48_hours(mock_crud_get_user_ticket):
+
+    te.setup()
+
     main.app.dependency_overrides[auth.get_current_active_user] = te.get_test_user
 
     ticket = te.get_ticket()
@@ -38,11 +43,13 @@ def test_me_cancellation_less_than_48_hours(mock_crud_get_user_ticket):
     assert response_me_cancellation.json(
     ) == {"detail": "Cancellation is only available until 48h before takeoff"}
 
-    main.app.dependency_overrides = {}
+    te.teardown()
 
 
 @ mock.patch("app.main.crud.get_user_ticket")
 def test_me_cancellation_ticket_id_not_found(mock_crud_get_ticket):
+
+    te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_user] = te.get_test_user
 
@@ -55,10 +62,12 @@ def test_me_cancellation_ticket_id_not_found(mock_crud_get_ticket):
     assert response_me_cancellation.json() == {
         "detail": "Object not found"}
 
-    main.app.dependency_overrides = {}
+    te.teardown()
 
 
 def test_me_cancellation_ticket_id_invalid_id_format():
+
+    te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_user] = te.get_test_user
 
@@ -77,10 +86,12 @@ def test_me_cancellation_ticket_id_invalid_id_format():
         }
     ]}
 
-    main.app.dependency_overrides = {}
+    te.teardown()
 
 
 def test_me_cancellation_unauthenticated():
+
+    te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_user] = te.raise_http_401_could_not_validate_credentials
 
@@ -92,10 +103,12 @@ def test_me_cancellation_unauthenticated():
         "detail": "Could not validate credentials"}
     assert response_me_cancellation.headers["WWW-Authenticate"] == "Bearer"
 
-    main.app.dependency_overrides = {}
+    te.teardown()
 
 
 def test_me_cancellation_inactive():
+
+    te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_user] = te.raise_http_400_inactive_user
 
@@ -106,4 +119,4 @@ def test_me_cancellation_inactive():
     assert response_me_cancellation.json() == {
         "detail": "Inactive user"}
 
-    main.app.dependency_overrides = {}
+    te.teardown()

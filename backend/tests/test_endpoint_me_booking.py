@@ -1,12 +1,14 @@
 from unittest import mock
 
-import pytest
 import tests.test_entities as te
 from app import auth, main
 
 
 @ mock.patch("app.main.crud")
 def test_me_booking(mock_crud):
+
+    te.setup()
+
     main.app.dependency_overrides[auth.get_current_active_user] = te.get_test_user
 
     flight = te.get_flight()
@@ -21,9 +23,14 @@ def test_me_booking(mock_crud):
     assert response_me_booking.status_code == 200
     assert response_me_booking.json() == {"ticket_id": str(ticket.id)}
 
+    te.teardown()
+
 
 @ mock.patch("app.main.crud")
 def test_me_booking_no_more_tickets_available(mock_crud):
+
+    te.setup()
+
     main.app.dependency_overrides[auth.get_current_active_user] = te.get_test_user
 
     flight = te.get_flight()
@@ -37,9 +44,13 @@ def test_me_booking_no_more_tickets_available(mock_crud):
     assert response_me_booking.json(
     ) == {"detail": "No more tickets available for this flight."}
 
+    te.teardown()
+
 
 @ mock.patch("app.main.crud.get_flight")
 def test_me_booking_flight_id_not_found(mock_crud_get_flight):
+
+    te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_user] = te.get_test_user
 
@@ -52,10 +63,12 @@ def test_me_booking_flight_id_not_found(mock_crud_get_flight):
     assert response_me_booking.json() == {
         "detail": "Object not found"}
 
-    main.app.dependency_overrides = {}
+    te.teardown()
 
 
 def test_me_booking_flight_id_invalid_id_format():
+
+    te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_user] = te.get_test_user
 
@@ -74,10 +87,12 @@ def test_me_booking_flight_id_invalid_id_format():
         }
     ]}
 
-    main.app.dependency_overrides = {}
+    te.teardown()
 
 
 def test_me_booking_unauthenticated():
+
+    te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_user] = te.raise_http_401_could_not_validate_credentials
 
@@ -89,10 +104,12 @@ def test_me_booking_unauthenticated():
         "detail": "Could not validate credentials"}
     assert response_me_booking.headers["WWW-Authenticate"] == "Bearer"
 
-    main.app.dependency_overrides = {}
+    te.teardown()
 
 
 def test_me_booking_inactive():
+
+    te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_user] = te.raise_http_400_inactive_user
 
@@ -103,4 +120,4 @@ def test_me_booking_inactive():
     assert response_me_booking.json() == {
         "detail": "Inactive user"}
 
-    main.app.dependency_overrides = {}
+    te.teardown()

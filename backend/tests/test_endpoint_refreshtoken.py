@@ -1,6 +1,5 @@
 from unittest import mock
 
-import pytest
 from app import auth
 import tests.test_entities as te
 
@@ -10,6 +9,8 @@ import tests.test_entities as te
 @mock.patch("app.main.auth.create_refresh_token")
 @mock.patch("app.main.crud.delete_refresh_token")
 def test_refresh_token(mock_crud_delete_refresh_token, mock_auth_create_refresh_token, mock_auth_create_access_token, mock_validate_token):
+
+    te.setup()
 
     refresh_token = te.get_refresh_token()
     access_token = te.get_access_token()
@@ -30,9 +31,14 @@ def test_refresh_token(mock_crud_delete_refresh_token, mock_auth_create_refresh_
     assert response_refresh_token.cookies.get_dict(
     ) == {"refresh_token": refresh_token}
 
+    te.teardown()
+
 
 @mock.patch("app.main.validate_token")
 def test_refresh_token_invalid_refresh_token(mock_validate_token):
+
+    te.setup()
+
     mock_validate_token.return_value = (False, False)
 
     refresh_token = te.get_refresh_token()
@@ -43,3 +49,5 @@ def test_refresh_token_invalid_refresh_token(mock_validate_token):
     assert response_refresh_token.status_code == 401
     assert response_refresh_token.headers["WWW-Authenticate"] == "Bearer"
     assert response_refresh_token.json() == {"detail": "Invalid refresh token"}
+
+    te.teardown()

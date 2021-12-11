@@ -8,6 +8,8 @@ from app import auth, main
 @ mock.patch("app.main.crud.get_airport")
 def test_airports_airport_id(mock_crud_get_airport):
 
+    te.setup()
+
     main.app.dependency_overrides[auth.get_current_active_user] = te.get_test_user
 
     airport_json = te.get_airport_json()
@@ -20,11 +22,13 @@ def test_airports_airport_id(mock_crud_get_airport):
     assert response_airports.status_code == 200
     assert response_airports.json() == airport_json
 
-    main.app.dependency_overrides = {}
+    te.teardown()
 
 
 @ mock.patch("app.main.crud.get_airport")
 def test_airports_airport_id_not_found(mock_crud_get_airport):
+
+    te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_user] = te.get_test_user
 
@@ -37,10 +41,12 @@ def test_airports_airport_id_not_found(mock_crud_get_airport):
     assert response_airports.json() == {
         "detail": "Object not found"}
 
-    main.app.dependency_overrides = {}
+    te.teardown()
 
 
 def test_airports_airport_id_invalid_id_format():
+
+    te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_user] = te.get_test_user
 
@@ -59,10 +65,12 @@ def test_airports_airport_id_invalid_id_format():
         }
     ]}
 
-    main.app.dependency_overrides = {}
+    te.teardown
 
 
 def test_airports_airport_id_unauthenticated():
+
+    te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_user] = te.raise_http_401_could_not_validate_credentials
 
@@ -74,10 +82,12 @@ def test_airports_airport_id_unauthenticated():
         "detail": "Could not validate credentials"}
     assert response_airports.headers["WWW-Authenticate"] == "Bearer"
 
-    main.app.dependency_overrides = {}
+    te.teardown()
 
 
 def test_airports_airport_id_inactive():
+
+    te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_user] = te.raise_http_400_inactive_user
 
@@ -88,4 +98,4 @@ def test_airports_airport_id_inactive():
     assert response_airports.json() == {
         "detail": "Inactive user"}
 
-    main.app.dependency_overrides = {}
+    te.teardown()

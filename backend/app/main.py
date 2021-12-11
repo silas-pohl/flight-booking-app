@@ -1,12 +1,8 @@
-from typing import Optional, List
-import psycopg2
-import os
 import re
 from random import SystemRandom
 from datetime import timedelta, datetime
 from sqlalchemy.sql.sqltypes import DateTime
 from fastapi import Depends, FastAPI, HTTPException, status, Response, Cookie
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy.orm import Session

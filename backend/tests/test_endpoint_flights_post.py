@@ -1,13 +1,14 @@
 from unittest import mock
 from datetime import timedelta
 import uuid
-import pytest
 import tests.test_entities as te
-from app import auth, main
+from app import auth, main, crud
 
 
 @mock.patch("app.main.crud.create_flight")
 def test_flights_post(mock_crud_create_flight):
+
+    te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_admin_user] = te.get_test_admin_user
 
@@ -23,10 +24,12 @@ def test_flights_post(mock_crud_create_flight):
     assert reponse_flights_post.status_code == 200
     assert reponse_flights_post.json() == flight_json
 
-    main.app.dependency_overrides = {}
+    te.teardown()
 
 
 def test_flights_post_arrival_time_earlier_than_departure_time():
+
+    te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_admin_user] = te.get_test_admin_user
 
@@ -47,12 +50,17 @@ def test_flights_post_arrival_time_earlier_than_departure_time():
     assert reponse_flights_post.json(
     ) == {"detail": "Arrival time must not be earlier than departure time."}
 
-    main.app.dependency_overrides = {}
+    te.teardown()
 
 
-def test_flights_post_unknown_destination_airport():
+@mock.patch("app.main.crud.get_airport")
+def test_flights_post_unknown_departure_or_destination_airport(mock_crud_get_airport):
+
+    te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_admin_user] = te.get_test_admin_user
+
+    mock_crud_get_airport.side_effect = te.get_http_404_object_not_found()
 
     flight = te.get_flight()
     flight_json_no_id = {
@@ -70,33 +78,12 @@ def test_flights_post_unknown_destination_airport():
     assert reponse_flights_post.json(
     ) == {"detail": "Object not found"}
 
-    main.app.dependency_overrides = {}
-
-
-def test_flights_post_unknown_departure_airport():
-
-    main.app.dependency_overrides[auth.get_current_active_admin_user] = te.get_test_admin_user
-
-    flight = te.get_flight()
-    flight_json_no_id = {
-        "arrival_time_utc": str(flight.arrival_time_utc),
-        "destination_airport_id": str(flight.destination_airport_id),
-        "seats": flight.seats,
-        "departure_time_utc": str(flight.departure_time_utc),
-        "departure_airport_id": str(uuid.uuid4()),
-        "ticket_price_dollars": flight.ticket_price_dollars
-    }
-
-    reponse_flights_post = te.client.post("/flights", json=flight_json_no_id)
-
-    assert reponse_flights_post.status_code == 404
-    assert reponse_flights_post.json(
-    ) == {"detail": "Object not found"}
-
-    main.app.dependency_overrides = {}
+    te.teardown()
 
 
 def test_flights_post_negative_seats():
+
+    te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_admin_user] = te.get_test_admin_user
 
@@ -116,10 +103,12 @@ def test_flights_post_negative_seats():
     assert reponse_flights_post.json(
     ) == {"detail": "Number of available seats must be greater than or equal to zero."}
 
-    main.app.dependency_overrides = {}
+    te.teardown()
 
 
 def test_flights_post_negative_ticket_price():
+
+    te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_admin_user] = te.get_test_admin_user
 
@@ -139,10 +128,12 @@ def test_flights_post_negative_ticket_price():
     assert reponse_flights_post.json(
     ) == {"detail": "Ticket price must be greater than or equal to zero."}
 
-    main.app.dependency_overrides = {}
+    te.teardown()
 
 
 def test_flights_post_unauthenticated():
+
+    te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_admin_user] = te.raise_http_401_could_not_validate_credentials
 
@@ -156,10 +147,12 @@ def test_flights_post_unauthenticated():
         "detail": "Could not validate credentials"}
     assert response_flights_post.headers["WWW-Authenticate"] == "Bearer"
 
-    main.app.dependency_overrides = {}
+    te.teardown()
 
 
 def test_flights_post_unauthorized():
+
+    te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_admin_user] = te.raise_http_401_unauthorized
 
@@ -172,10 +165,12 @@ def test_flights_post_unauthorized():
     assert response_flights_post.json() == {
         "detail": "Unauthorized"}
 
-    main.app.dependency_overrides = {}
+    te.teardown()
 
 
 def test_flight_post_inactive():
+
+    te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_admin_user] = te.raise_http_400_inactive_user
 
@@ -189,4 +184,4 @@ def test_flight_post_inactive():
     assert response_flights_post.json() == {
         "detail": "Inactive user"}
 
-    main.app.dependency_overrides = {}
+    te.teardown()

@@ -6,6 +6,8 @@ from app import main, auth
 
 def test_me():
 
+    te.setup()
+
     main.app.dependency_overrides[auth.get_current_active_user] = te.get_test_user
 
     user = te.get_test_user()
@@ -19,10 +21,12 @@ def test_me():
         "last_name": user.last_name
     }
 
-    main.app.dependency_overrides = {}
+    te.teardown()
 
 
 def test_me_unauthenticated():
+
+    te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_user] = te.raise_http_401_could_not_validate_credentials
 
@@ -33,10 +37,12 @@ def test_me_unauthenticated():
         "detail": "Could not validate credentials"}
     assert response_me.headers["WWW-Authenticate"] == "Bearer"
 
-    main.app.dependency_overrides = {}
+    te.teardown()
 
 
 def test_me_inactive():
+
+    te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_user] = te.raise_http_400_inactive_user
 
@@ -46,4 +52,4 @@ def test_me_inactive():
     assert response_me.json() == {
         "detail": "Inactive user"}
 
-    main.app.dependency_overrides = {}
+    te.teardown()

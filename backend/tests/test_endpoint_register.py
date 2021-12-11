@@ -7,6 +7,8 @@ import tests.test_entities as te
 @ mock.patch("app.main.crud")
 def test_register_valid_input_data(mock_crud):
 
+    te.setup()
+
     verification_entry = te.get_test_verification_entry()
     user = te.get_test_user()
     valid_password = te.get_valid_password()
@@ -22,8 +24,12 @@ def test_register_valid_input_data(mock_crud):
     assert response_register.status_code == 200
     assert response_register.json() == register_json
 
+    te.teardown()
+
 
 def test_register_invalid_email():
+
+    te.setup()
 
     verification_entry = te.get_test_verification_entry()
     invalid_email = te.get_invalid_test_email()
@@ -39,8 +45,12 @@ def test_register_invalid_email():
     assert response_register.status_code == 422
     assert response_register.json() == {"detail": "Invalid request data"}
 
+    te.teardown()
+
 
 def test_register_invalid_first_name():
+
+    te.setup()
 
     valid_email = te.get_valid_test_email()
     invalid_first_name = te.get_invalid_names()["first_name"]
@@ -55,8 +65,12 @@ def test_register_invalid_first_name():
     assert response_register.status_code == 422
     assert response_register.json() == {"detail": "Invalid request data"}
 
+    te.teardown()
+
 
 def test_register_invalid_last_name():
+
+    te.setup()
 
     valid_email = te.get_valid_test_email()
     valid_first_name = te.get_valid_names()["first_name"]
@@ -71,8 +85,12 @@ def test_register_invalid_last_name():
     assert response_register.status_code == 422
     assert response_register.json() == {"detail": "Invalid request data"}
 
+    te.teardown()
+
 
 def test_register_invalid_password():
+
+    te.setup()
 
     valid_email = te.get_valid_test_email()
     valid_names = te.get_valid_names()
@@ -88,9 +106,13 @@ def test_register_invalid_password():
     assert response_register.status_code == 422
     assert response_register.json() == {"detail": "Invalid request data"}
 
+    te.teardown()
+
 
 @ mock.patch("app.main.crud")
 def test_register_no_verification_entry(mock_crud):
+
+    te.setup()
 
     valid_email = te.get_valid_test_email()
     valid_names = te.get_valid_names()
@@ -109,9 +131,13 @@ def test_register_no_verification_entry(mock_crud):
     assert response_register.json() == {
         "detail": "Incorrect verification code"}
 
+    te.teardown()
+
 
 @ mock.patch("app.main.crud")
 def test_register_invalid_verification_code(mock_crud):
+
+    te.setup()
 
     valid_email = te.get_valid_test_email()
     valid_names = te.get_valid_names()
@@ -129,3 +155,5 @@ def test_register_invalid_verification_code(mock_crud):
     assert response_register.status_code == 403
     assert response_register.json() == {
         "detail": "Incorrect verification code"}
+
+    te.teardown()

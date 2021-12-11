@@ -1,12 +1,13 @@
 from unittest import mock
 
-import pytest
 import tests.test_entities as te
 from app import auth, main
 
 
 @mock.patch("app.main.crud.get_users")
 def test_users(mock_crud_get_users):
+
+    te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_admin_user] = te.get_test_admin_user
 
@@ -20,10 +21,12 @@ def test_users(mock_crud_get_users):
     assert response_users.status_code == 200
     assert response_users.json() == users_json
 
-    main.app.dependency_overrides = {}
+    te.teardown()
 
 
 def test_users_unauthenticated():
+
+    te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_admin_user] = te.raise_http_401_could_not_validate_credentials
 
@@ -34,10 +37,12 @@ def test_users_unauthenticated():
         "detail": "Could not validate credentials"}
     assert response_users.headers["WWW-Authenticate"] == "Bearer"
 
-    main.app.dependency_overrides = {}
+    te.teardown()
 
 
 def test_users_unauthorized():
+
+    te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_admin_user] = te.raise_http_401_unauthorized
 
@@ -46,10 +51,12 @@ def test_users_unauthorized():
     assert response_users.json() == {
         "detail": "Unauthorized"}
 
-    main.app.dependency_overrides = {}
+    te.teardown()
 
 
 def test_users_inactive():
+
+    te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_admin_user] = te.raise_http_400_inactive_user
 
@@ -58,3 +65,5 @@ def test_users_inactive():
     assert response_users.status_code == 400
     assert response_users.json() == {
         "detail": "Inactive user"}
+
+    te.teardown()

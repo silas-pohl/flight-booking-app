@@ -9,6 +9,8 @@ import tests.test_entities as te
 @ mock.patch("app.main.crud")
 def test_verification_code_valid_input_data(mock_crud, mock_send_verification_code, verification_entry):
 
+    te.setup()
+
     mock_crud.get_user_by_email.return_value = None
     mock_crud.delete_expired_verification_records.return_value = None
     mock_crud.read_verification_record.return_value = verification_entry
@@ -52,8 +54,12 @@ def test_verification_code_valid_input_data(mock_crud, mock_send_verification_co
     assert response_reset.json() == {
         "email": "test@test.test", "action": "reset"}
 
+    te.teardown()
+
 
 def test_verification_code_invalid_email():
+
+    te.setup()
 
     invalid_email = te.get_invalid_test_email()
     response_register = te.client.post(
@@ -61,11 +67,17 @@ def test_verification_code_invalid_email():
     assert response_register.status_code == 422
     assert response_register.json() == {"detail": "Invalid request data"}
 
+    te.teardown()
+
 
 def test_verification_code_invalid_action():
+
+    te.setup()
 
     valid_email = te.get_valid_test_email()
     response_register = te.client.post(
         "/verificationcode", json={"email": valid_email, "action": "invalid_request"})
     assert response_register.status_code == 422
     assert response_register.json() == {"detail": "Invalid request data"}
+
+    te.teardown()

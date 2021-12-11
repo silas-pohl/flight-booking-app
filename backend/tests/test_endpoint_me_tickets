@@ -7,6 +7,8 @@ from app import main, auth
 @ mock.patch("app.main.crud.get_user_tickets")
 def test_me_tickets(mock_crud_get_user_tickets):
 
+    te.setup()
+
     main.app.dependency_overrides[auth.get_current_active_user] = te.get_test_user
 
     tickets_json = te.get_tickets_json()
@@ -18,10 +20,12 @@ def test_me_tickets(mock_crud_get_user_tickets):
     assert response_me_tickets.status_code == 200
     assert response_me_tickets.json() == tickets_json
 
-    main.app.dependency_overrides = {}
+    te.teardown()
 
 
 def test_me_tickets_unauthenticated():
+
+    te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_user] = te.raise_http_401_could_not_validate_credentials
 
@@ -32,10 +36,12 @@ def test_me_tickets_unauthenticated():
         "detail": "Could not validate credentials"}
     assert response_me_tickets.headers["WWW-Authenticate"] == "Bearer"
 
-    main.app.dependency_overrides = {}
+    te.teardown()
 
 
 def test_me_tickets_inactive():
+
+    te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_user] = te.raise_http_400_inactive_user
 
@@ -45,4 +51,4 @@ def test_me_tickets_inactive():
     assert response_me_tickets.json() == {
         "detail": "Inactive user"}
 
-    main.app.dependency_overrides = {}
+    te.teardown()

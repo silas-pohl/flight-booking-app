@@ -1,10 +1,23 @@
 from datetime import datetime
 from fastapi.testclient import TestClient
-from app import main, schemas, models
+from app import main, schemas, models, auth
 from fastapi import HTTPException, status
 
 
 client = TestClient(main.app)
+
+
+def setup():
+    main.app.dependency_overrides[main.get_db] = return_none
+    main.app.dependency_overrides[auth.get_db] = return_none
+
+
+def teardown():
+    main.app.dependency_overrides = {}
+
+
+def return_none():
+    return None
 
 
 def get_test_user():
@@ -105,7 +118,7 @@ def get_test_users_json():
 
 
 def get_access_token():
-    return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJwYXltZW50cy5mbGlnaHQuYm9va2luZ0BnbWFpbC5jb20iLCJhZG1pbiI6ZmFsc2UsImV4cCI6MTYzODU1MDI4N30.pcjYDatsOw7rtbOl36s0aruAaKwl6dWYPHrxR94iI-A"
+    return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0QHRlc3QudGVzdCIsImFkbWluIjpmYWxzZSwiZXhwIjoxNjM5MjQ2NjM3fQ.Zp29MFljaPlAEggWwl2TnWG2Y4M7nd-12GV-mxlkrIE"
 
 
 def get_refresh_token():
@@ -116,6 +129,14 @@ def get_test_verification_entry():
     return schemas.EmailVerificationEntry(email="test@test.test",
                                           verification_code=12345678,
                                           created=datetime.now())
+
+
+def get_valid_jwt_payload():
+    return {
+        "sub": "test@test.test",
+        "admin": False,
+        "exp": 1639246637
+    }
 
 
 def get_valid_test_email():
@@ -146,6 +167,14 @@ def get_valid_password():
 
 def get_invalid_password():
     return "TestT3st"
+
+
+def get_valid_password_bcrypt_hash_combination():
+    return ("TestT3stT€st", "$2b$12$.8typ1otGMx3GxG0U0i.2eYSmBES1Y1.pa28A0wV9cydvXWK1dEHe")
+
+
+def get_invalid_password_bcrypt_hash_combination():
+    return ("TestT3stT€st", "$2b$12$.8typ1otGMx3GxG0U0i.2eYSmBES1Y1.pa28A0wV9cydvXWK1dFHe")
 
 
 def get_tickets():

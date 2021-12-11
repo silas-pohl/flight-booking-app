@@ -1,12 +1,13 @@
 from unittest import mock
 
-import pytest
 import tests.test_entities as te
 from app import auth, main
 
 
 @ mock.patch("app.main.crud.get_flight")
 def test_flights_flight_id(mock_crud_get_flight):
+
+    te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_user] = te.get_test_user
 
@@ -21,11 +22,13 @@ def test_flights_flight_id(mock_crud_get_flight):
     assert response_flights.status_code == 200
     assert response_flights.json() == flight_json
 
-    main.app.dependency_overrides = {}
+    te.teardown()
 
 
 @ mock.patch("app.main.crud.get_flight")
 def test_flights_flight_id_not_found(mock_crud_get_flight):
+
+    te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_user] = te.get_test_user
 
@@ -38,10 +41,12 @@ def test_flights_flight_id_not_found(mock_crud_get_flight):
     assert response_flights.json() == {
         "detail": "Object not found"}
 
-    main.app.dependency_overrides = {}
+    te.teardown()
 
 
 def test_flights_flight_id_invalid_id_format():
+
+    te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_user] = te.get_test_user
 
@@ -60,10 +65,12 @@ def test_flights_flight_id_invalid_id_format():
         }
     ]}
 
-    main.app.dependency_overrides = {}
+    te.teardown()
 
 
 def test_flights_flight_id_unauthenticated():
+
+    te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_user] = te.raise_http_401_could_not_validate_credentials
 
@@ -75,10 +82,12 @@ def test_flights_flight_id_unauthenticated():
         "detail": "Could not validate credentials"}
     assert response_flights.headers["WWW-Authenticate"] == "Bearer"
 
-    main.app.dependency_overrides = {}
+    te.teardown()
 
 
 def test_flights_flight_id_inactive():
+
+    te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_user] = te.raise_http_400_inactive_user
 
@@ -89,4 +98,4 @@ def test_flights_flight_id_inactive():
     assert response_flights.json() == {
         "detail": "Inactive user"}
 
-    main.app.dependency_overrides = {}
+    te.teardown()

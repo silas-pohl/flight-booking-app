@@ -1,6 +1,5 @@
 from unittest import mock
 
-import pytest
 import tests.test_entities as te
 from app import auth
 
@@ -9,6 +8,9 @@ from app import auth
 @ mock.patch("app.main.auth.create_refresh_token")
 @ mock.patch("app.main.auth.authenticate_user")
 def test_login_valid_login(mock_auth_authenticate_user, mock_auth_create_refresh_token, mock_auth_create_access_token):
+
+    te.setup()
+
     mock_auth_authenticate_user.return_value = te.get_test_user()
     mock_auth_create_refresh_token.return_value = te.get_refresh_token()
     mock_auth_create_access_token.return_value = te.get_access_token()
@@ -29,9 +31,14 @@ def test_login_valid_login(mock_auth_authenticate_user, mock_auth_create_refresh
     assert response_login.cookies.get_dict(
     ) == {"refresh_token": refresh_token}
 
+    te.teardown()
+
 
 @ mock.patch("app.main.auth.authenticate_user")
 def test_login_non_matching_credentials(mock_auth_authenticate_user):
+
+    te.setup()
+
     mock_auth_authenticate_user.return_value = None
 
     valid_username = te.get_valid_test_email()
@@ -45,3 +52,5 @@ def test_login_non_matching_credentials(mock_auth_authenticate_user):
     assert response_login.headers["WWW-Authenticate"] == "Bearer"
     assert response_login.json() == {
         "detail": "Incorrect email or password"}
+
+    te.teardown()

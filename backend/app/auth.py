@@ -5,8 +5,8 @@ from jose import JWTError, jwt
 from fastapi.security import OAuth2PasswordBearer
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from . import schemas, crud, models
-from .database import SessionLocal, engine
+from app import schemas, crud, models
+from app.database import SessionLocal, engine
 
 import os
 
