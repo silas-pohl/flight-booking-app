@@ -44,20 +44,25 @@
       credentials: 'include',
       body: JSON.stringify({ email, password }),
     })
-    .then((res: Response) => {
-      if (res.status === 200) {
-        res.json().then((data: any) => {
-          window.location.href = '/';
-        });
-      } else if (res.status === 401) {
-        notification = { kind: 'error', title: 'Incorrect email or password.', subtitle: 'Please try again.' };
-      } else {
+      .then((res: Response) => {
+        if (res.status === 200) {
+          res
+            .json()
+            .then(() => {
+              window.location.href = '/';
+            })
+            .catch((err: Error) => {
+              console.error(err);
+            });
+        } else if (res.status === 401) {
+          notification = { kind: 'error', title: 'Incorrect email or password.', subtitle: 'Please try again.' };
+        } else {
+          notification = { kind: 'error', title: 'Something went wrong.', subtitle: 'Please try again later or contact support.' };
+        }
+      })
+      .catch(() => {
         notification = { kind: 'error', title: 'Something went wrong.', subtitle: 'Please try again later or contact support.' };
-      }
-    })
-    .catch((err: Error) => {
-      notification = { kind: 'error', title: 'Something went wrong.', subtitle: 'Please try again later or contact support.' };
-    });
+      });
   };
 </script>
 
