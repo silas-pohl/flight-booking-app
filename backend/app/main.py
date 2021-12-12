@@ -138,6 +138,8 @@ async def refreshtoken(response: Response, refresh_token: str = Cookie(None), db
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    crud.delete_refresh_token(db, refresh_token=refresh_token)
+
     access_token = auth.create_access_token(
         data={"sub": email, "admin": admin},
         expires_delta=timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -219,6 +221,10 @@ async def get_flight(flight_id: uuid.UUID, current_user: schemas.User = Depends(
 
 @app.post("/me/booking", response_model=schemas.TicketID)
 async def book_flight(data: schemas.FlightID, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
+    if current_user.is_admin:
+        raise HTTPException(
+            status_code=401, detail="Action not allowed for admins"
+        )
     flight = crud.get_flight(db=db, flight_id=data.flight_id)
     booked_tickets = crud.get_booked_tickets_number(
         db=db, flight_id=data.flight_id)
@@ -234,7 +240,8 @@ async def book_flight(data: schemas.FlightID, current_user: schemas.User = Depen
 async def cancel_flight(data: schemas.TicketID, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
     user_ticket = crud.get_user_ticket(
         db=db, user_id=current_user.id, ticket_id=data.ticket_id)
-    if(datetime.now() - user_ticket.created < timedelta(hours=48)):
+    flight = crud.get_flight(db=db, flight_id=user_ticket.flight_id)
+    if(((flight.departure_time_utc - datetime.now()).total_seconds() / 3600) > 48):
         return crud.delete_user_ticket(
             db=db, user_id=current_user.id, ticket_id=data.ticket_id)
     else:
