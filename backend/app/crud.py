@@ -1,9 +1,7 @@
 from datetime import datetime, timedelta
-import typing
 import uuid
 import sqlalchemy
 from sqlalchemy.orm import Session
-from sqlalchemy.sql.functions import mode
 
 from fastapi import HTTPException, status
 

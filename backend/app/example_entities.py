@@ -13,7 +13,7 @@ def create_airport(db: Session, title: str):
 
 
 def create_example_entities(db: Session):
-    if(crud.get_user_by_email(db=db, email="payments.flight.booking@gmail.com")):
+    if(crud.get_user_by_email(db=db, email="test@test.test")):
         raise HTTPException(
             status_code=409, detail="Example user already exists, aborting example setup")
 

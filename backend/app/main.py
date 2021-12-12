@@ -1,12 +1,8 @@
-from typing import Optional, List
-import psycopg2
-import os
 import re
 from random import SystemRandom
 from datetime import timedelta, datetime
 from sqlalchemy.sql.sqltypes import DateTime
 from fastapi import Depends, FastAPI, HTTPException, status, Response, Cookie
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -119,14 +115,14 @@ async def login(form_data: schemas.TokenLogin, response: Response, db: Session =
         expires_delta=timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
     )
     refresh_token = auth.create_refresh_token(
-      data={"sub": user.email, "admin": user.is_admin}, 
-      expires_delta=timedelta(days=auth.ACCESS_TOKEN_EXPIRE_MINUTES+1),
-      db=db
+        data={"sub": user.email, "admin": user.is_admin},
+        expires_delta=timedelta(days=auth.ACCESS_TOKEN_EXPIRE_MINUTES+1),
+        db=db
     )
-    
-    
-    response.set_cookie(key="refresh_token", value=refresh_token, httponly=True)
-    
+
+    response.set_cookie(key="refresh_token",
+                        value=refresh_token, httponly=True)
+
     return {"access_token": access_token,
             "token_type": "bearer",
             "expires_in": auth.ACCESS_TOKEN_EXPIRE_MINUTES*60*1000}
@@ -149,15 +145,18 @@ async def refreshtoken(response: Response, refresh_token: str = Cookie(None), db
         expires_delta=timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
     )
     new_refresh_token = auth.create_refresh_token(
-      data={"sub": email, "admin": admin}, 
-      expires_delta=timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES+1),
-      db=db
+        data={"sub": email, "admin": admin},
+        expires_delta=timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES+1),
+        db=db
     )
 
-    response.set_cookie(key="refresh_token", value=new_refresh_token, httponly=True)
+    response.set_cookie(key="refresh_token",
+                        value=new_refresh_token, httponly=True)
 
-    return {"access_token": access_token, 
-            "token_type": "bearer", 
+    crud.delete_refresh_token(db, refresh_token=refresh_token)
+
+    return {"access_token": access_token,
+            "token_type": "bearer",
             "expires_in": auth.ACCESS_TOKEN_EXPIRE_MINUTES*60*1000}
 
 
@@ -167,7 +166,7 @@ def validate_token(token: str, db: Session):
         return False, False
 
     userinfo = auth.verify_token(token)
-    if not userinfo:
+    if not userinfo[0]:
         return False, False
     return userinfo
 
@@ -222,6 +221,10 @@ async def get_flight(flight_id: uuid.UUID, current_user: schemas.User = Depends(
 
 @app.post("/me/booking", response_model=schemas.TicketID)
 async def book_flight(data: schemas.FlightID, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
+    if current_user.is_admin:
+        raise HTTPException(
+            status_code=401, detail="Action not allowed for admins"
+        )
     flight = crud.get_flight(db=db, flight_id=data.flight_id)
     booked_tickets = crud.get_booked_tickets_number(
         db=db, flight_id=data.flight_id)
