@@ -25,16 +25,19 @@ def me_cancellation(mock_crud):
     te.teardown()
 
 
+@ mock.patch("app.main.crud.get_flight")
 @ mock.patch("app.main.crud.get_user_ticket")
-def test_me_cancellation_less_than_48_hours(mock_crud_get_user_ticket):
+def test_me_cancellation_less_than_48_hours(mock_crud_get_user_ticket, mock_crud_get_flight):
 
     te.setup()
 
     main.app.dependency_overrides[auth.get_current_active_user] = te.get_test_user
 
     ticket = te.get_ticket()
-    ticket.created = datetime.now() - timedelta(hours=48)
+    flight = te.get_flight()
+    flight.departure_time_utc = datetime.now() - timedelta(hours=48)
     mock_crud_get_user_ticket.return_value = ticket
+    mock_crud_get_flight.return_value = flight
 
     response_me_cancellation = te.client.post(
         "/me/cancellation", json={"ticket_id": str(ticket.id)})
@@ -128,11 +131,11 @@ def test_me_booking_admin():
 
     main.app.dependency_overrides[auth.get_current_active_user] = te.get_test_admin_user
 
-    response_me_booking = te.client.post(
-        "/me/booking", json={"ticket_id": "20453064-2468-48ef-896f-b4a2513973a3"})
+    response_me_cancellation = te.client.post(
+        "/me/cancellation", json={"ticket_id": "20453064-2468-48ef-896f-b4a2513973a3"})
 
-    assert response_me_booking.status_code == 401
-    assert response_me_booking.json() == {
+    assert response_me_cancellation.status_code == 401
+    assert response_me_cancellation.json() == {
         "detail": "Action not allowed for admins"}
 
     te.teardown()
