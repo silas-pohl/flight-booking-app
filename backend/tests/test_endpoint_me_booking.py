@@ -121,3 +121,19 @@ def test_me_booking_inactive():
         "detail": "Inactive user"}
 
     te.teardown()
+
+
+def test_me_booking_admin():
+
+    te.setup()
+
+    main.app.dependency_overrides[auth.get_current_active_user] = te.get_test_admin_user
+
+    response_me_booking = te.client.post(
+        "/me/booking", json={"flight_id": "20453064-2468-48ef-896f-b4a2513973a3"})
+
+    assert response_me_booking.status_code == 401
+    assert response_me_booking.json() == {
+        "detail": "Action not allowed for admins"}
+
+    te.teardown()

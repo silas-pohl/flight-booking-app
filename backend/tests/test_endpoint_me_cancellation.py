@@ -113,10 +113,26 @@ def test_me_cancellation_inactive():
     main.app.dependency_overrides[auth.get_current_active_user] = te.raise_http_400_inactive_user
 
     response_me_cancellation = te.client.post(
-        "/me/cancellation", json={"ticket__id": "20453064-2468-48ef-896f-b4a2513973a3"})
+        "/me/cancellation", json={"ticket_id": "20453064-2468-48ef-896f-b4a2513973a3"})
 
     assert response_me_cancellation.status_code == 400
     assert response_me_cancellation.json() == {
         "detail": "Inactive user"}
+
+    te.teardown()
+
+
+def test_me_booking_admin():
+
+    te.setup()
+
+    main.app.dependency_overrides[auth.get_current_active_user] = te.get_test_admin_user
+
+    response_me_booking = te.client.post(
+        "/me/booking", json={"ticket_id": "20453064-2468-48ef-896f-b4a2513973a3"})
+
+    assert response_me_booking.status_code == 401
+    assert response_me_booking.json() == {
+        "detail": "Action not allowed for admins"}
 
     te.teardown()

@@ -238,6 +238,10 @@ async def book_flight(data: schemas.FlightID, current_user: schemas.User = Depen
 
 @app.post("/me/cancellation")
 async def cancel_flight(data: schemas.TicketID, current_user: schemas.User = Depends(auth.get_current_active_user), db: Session = Depends(get_db)):
+    if current_user.is_admin:
+        raise HTTPException(
+            status_code=401, detail="Action not allowed for admins"
+        )
     user_ticket = crud.get_user_ticket(
         db=db, user_id=current_user.id, ticket_id=data.ticket_id)
     flight = crud.get_flight(db=db, flight_id=user_ticket.flight_id)
