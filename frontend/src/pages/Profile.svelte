@@ -56,7 +56,7 @@
 
   let user: Promise<User> = new Promise(() => {});
   let tickets: Promise<DisplayTicket[]> = new Promise(() => {});
-  let show_cancellation_modal: {[key: string]: boolean} = {};
+  let show_cancellation_modal: { [key: string]: boolean } = {};
   let cancellation_fail: boolean = false;
   let admin = false;
 
@@ -77,22 +77,22 @@
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${$access_token as string}`
-      }
+        Authorization: `Bearer ${$access_token as string}`,
+      },
     });
-    let data: User = await res.json() as User;
+    let data: User = (await res.json()) as User;
     return data;
-  }
+  };
 
   const get_user_tickets = async (): Promise<DisplayTicket[]> => {
     let res = await fetch(($API_URL as string) + '/me/tickets', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${$access_token as string}`
-      }
+        Authorization: `Bearer ${$access_token as string}`,
+      },
     });
-    let data: Ticket[] = await res.json() as Ticket[];
+    let data: Ticket[] = (await res.json()) as Ticket[];
     let display_tickets: DisplayTicket[] = [];
     for (const [i, ticket] of data.entries()) {
       let flight = await get_flight(ticket.flight_id);
@@ -103,10 +103,10 @@
         destination_airport: await get_airport(flight.destination_airport_id),
         arrival_time: flight.arrival_time_utc,
         created: ticket.created,
-      }
+      };
     }
     return display_tickets;
-  }
+  };
 
   const get_flight = async (flight_id: string): Promise<Flight> => {
     let res: Response = await fetch(($API_URL as string) + '/flights/' + flight_id, {
@@ -140,10 +140,10 @@
       body: JSON.stringify({ ticket_id }),
     });
     if (res.ok) {
-      window.location.reload()
+      window.location.reload();
     } else {
       cancellation_fail = true;
-      setTimeout(() => cancellation_fail = false, 3000);
+      setTimeout(() => (cancellation_fail = false), 3000);
     }
   };
 </script>
@@ -158,59 +158,61 @@
       <div id="avatar">
         <img alt="Avatar" src="https://avatars.dicebear.com/api/avataaars/{res_user.first_name[0]}{res_user.last_name[0]}{res_user.email[0]}.svg" />
       </div>
-      <div id="name">{res_user.first_name} {res_user.last_name} {admin ? '(Admin)': ''}</div>
+      <div id="name">{res_user.first_name} {res_user.last_name} {admin ? '(Admin)' : ''}</div>
       <div id="email">{res_user.email}</div>
       {#if !admin}
-      <div id="tickets">
-        <h1 style="text-align: center; margin-bottom: 1rem">Your tickets</h1>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Departure Airport</TableCell>
-              <TableCell>Departure Time</TableCell>
-              <TableCell>Destination Airport</TableCell>
-              <TableCell>Arrival Time</TableCell>
-              <TableCell>Time of Purchase</TableCell>
-              <TableCell />
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {#each res_tickets as ticket}
+        <div id="tickets">
+          <h1 style="text-align: center; margin-bottom: 1rem">Your tickets</h1>
+          <Table>
+            <TableHead>
               <TableRow>
-                <TableCell>{ticket.departure_airport}</TableCell>
-                <TableCell>{new Date(ticket.departure_time).toUTCString()}</TableCell>
-                <TableCell>{ticket.destination_airport}</TableCell>
-                <TableCell>{new Date(ticket.arrival_time).toUTCString()}</TableCell>
-                <TableCell>{new Date(ticket.created).toUTCString()}</TableCell>
-                <TableCell style="padding: 0 !important;"><Button on:click={() => show_cancellation_modal[ticket.id] = true} style="width: 100%;" kind="danger" icon={CloseOutline}>Cancel</Button></TableCell>
+                <TableCell>Departure Airport</TableCell>
+                <TableCell>Departure Time</TableCell>
+                <TableCell>Destination Airport</TableCell>
+                <TableCell>Arrival Time</TableCell>
+                <TableCell>Time of Purchase</TableCell>
+                <TableCell />
               </TableRow>
-              <Modal
-                on:close={() => (show_cancellation_modal[ticket.id] = false)}
-                on:submit={() => (cancel_flight(String(ticket.id)))}
-                open={show_cancellation_modal[ticket.id]}
-                danger
-                modalHeading="FLIGHT CANCELLATION"
-                primaryButtonText="Cancel Flight"
+            </TableHead>
+            <TableBody>
+              {#each res_tickets as ticket}
+                <TableRow>
+                  <TableCell>{ticket.departure_airport}</TableCell>
+                  <TableCell>{new Date(ticket.departure_time).toUTCString()}</TableCell>
+                  <TableCell>{ticket.destination_airport}</TableCell>
+                  <TableCell>{new Date(ticket.arrival_time).toUTCString()}</TableCell>
+                  <TableCell>{new Date(ticket.created).toUTCString()}</TableCell>
+                  <TableCell style="padding: 0 !important;"
+                    ><Button on:click={() => (show_cancellation_modal[ticket.id] = true)} style="width: 100%;" kind="danger" icon={CloseOutline}>Cancel</Button></TableCell
+                  >
+                </TableRow>
+                <Modal
+                  on:close={() => (show_cancellation_modal[ticket.id] = false)}
+                  on:submit={() => cancel_flight(String(ticket.id))}
+                  open={show_cancellation_modal[ticket.id]}
+                  danger
+                  modalHeading="FLIGHT CANCELLATION"
+                  primaryButtonText="Cancel Flight"
                 >
-                Flight cancellations are possible up to 48 hours before departure.<br>
-                Are you sure you want to cancel this flight? This action cannot be undone.<br>
-                The ticket price paid will be refunded as soon as possible.<br><br>
-                <h5>{ticket.departure_airport} → {ticket.destination_airport}</h5> on {new Date(ticket.departure_time).toDateString()}
-                
-              </Modal>
-            {/each}
-          </TableBody>
-        </Table>
-        {#if cancellation_fail}
-          <ToastNotification
-            style="position: absolute; bottom: 0; right: 0; z-index: 9001;"
-            kind="error"
-            title="Flight cancellation failed!"
-            subtitle="Flight cancellations are only possible up to 48 hours before departure."
-            lowContrast
-          />
-        {/if}
-      </div>
+                  Flight cancellations are possible up to 48 hours before departure.<br />
+                  Are you sure you want to cancel this flight? This action cannot be undone.<br />
+                  The ticket price paid will be refunded as soon as possible.<br /><br />
+                  <h5>{ticket.departure_airport} → {ticket.destination_airport}</h5>
+                  on {new Date(ticket.departure_time).toDateString()}
+                </Modal>
+              {/each}
+            </TableBody>
+          </Table>
+          {#if cancellation_fail}
+            <ToastNotification
+              style="position: absolute; bottom: 0; right: 0; z-index: 9001;"
+              kind="error"
+              title="Flight cancellation failed!"
+              subtitle="Flight cancellations are only possible up to 48 hours before departure."
+              lowContrast
+            />
+          {/if}
+        </div>
       {/if}
     {/await}
   {/await}

@@ -50,6 +50,15 @@ declare interface Flight {
   id: string;
 }
 
+declare interface NewFlight {
+  departure_airport: string;
+  destination_airport: string;
+  departure_time: string;
+  arrival_time: string;
+  price: number;
+  seats: number;
+}
+
 declare interface DisplayFlight {
   id: string;
   departure_airport: string;

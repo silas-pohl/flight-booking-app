@@ -8,32 +8,36 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { API_URL, access_token } from '../store';
-  import { DatePicker, NumberInput, Modal, ToastNotification, Loading, Button, Table, TableHead, TableBody, TableRow, TableCell, Select, SelectItem } from 'carbon-components-svelte';
+  import { TextInput, NumberInput, Modal, ToastNotification, Loading, Button, Table, TableHead, TableBody, TableRow, TableCell, Select, SelectItem } from 'carbon-components-svelte';
   import ShoppingCart from 'carbon-icons-svelte/lib/ShoppingCart32';
   import Erase from 'carbon-icons-svelte/lib/Erase32';
   import AddAlt from 'carbon-icons-svelte/lib/AddAlt32';
 
   let flights: Promise<DisplayFlight[]> = new Promise(() => {});
-  let show_booking_modal: {[key: string]: boolean} = {};
+  let airports: Airport[] = [];
+  let show_booking_modal: { [key: string]: boolean } = {};
   let booking_fail = false;
   let booking_success = false;
   let admin = false;
-  let new_flight: {[key: string]: string|number} = {
-    'departure_airport': 'JFK - New York Airport', 
-    'departure_time': '',
-    'destination_airport': 'MUC - Munich Airport',
-    'arrival_time': '',
-    'price': 0,
-    'seats': 0
-  }
+  let new_flight: NewFlight = {
+    departure_airport: 'JFK - New York Airport',
+    departure_time: '',
+    destination_airport: 'MUC - Munich Airport',
+    arrival_time: '',
+    price: 0,
+    seats: 0,
+  };
 
   onMount(() => {
     setTimeout(async () => {
       admin = JSON.parse(window.atob($access_token.split('.')[1])).admin;
       flights = get_flights();
+      airports = await get_airports();
       let res_flights = await flights;
       if (!admin) {
-        res_flights.forEach(flight => { show_booking_modal[flight.id] = false })
+        res_flights.forEach(flight => {
+          show_booking_modal[flight.id] = false;
+        });
       }
     }, 300);
   });
@@ -46,7 +50,7 @@
         Authorization: `Bearer ${$access_token as string}`,
       },
     });
-    let data: Flight[] = await res.json() as Flight[];
+    let data: Flight[] = (await res.json()) as Flight[];
     let display_flights: DisplayFlight[] = [];
     for (const [i, flight] of data.entries()) {
       display_flights[i] = {
@@ -57,10 +61,10 @@
         arrival_time: flight.arrival_time_utc,
         price: flight.ticket_price_dollars,
         seats: flight.seats,
-      }
+      };
     }
     return display_flights;
-  }
+  };
 
   const get_airport = async (airport_id: string): Promise<string> => {
     let res = await fetch(($API_URL as string) + '/airports/' + airport_id, {
@@ -81,14 +85,14 @@
         'Content-Type': 'application/json',
         Authorization: `Bearer ${$access_token as string}`,
       },
-      body: JSON.stringify({flight_id}),
+      body: JSON.stringify({ flight_id }),
     });
     if (res.ok) {
       booking_success = true;
-      setTimeout(() => booking_success = false, 3000);
+      setTimeout(() => (booking_success = false), 3000);
     } else {
       booking_fail = true;
-      setTimeout(() => booking_fail = false, 3000);
+      setTimeout(() => (booking_fail = false), 3000);
     }
   };
 
@@ -98,21 +102,53 @@
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${$access_token as string}`,
-      }
+      },
     });
     if (res.ok) {
       window.location.reload();
     }
-  }
+  };
 
-  const create_flight = async () => {}
+  const get_airports = async (): Promise<Airport[]> => {
+    let res = await fetch(($API_URL as string) + '/airports', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${$access_token as string}`,
+      },
+    });
+    let data: Airport[] = (await res.json()) as Airport[];
+    return data;
+  };
 
+  const create_flight = async () => {
+    let body = JSON.stringify({
+        'departure_airport_id': airports.find(airport => airport.title === new_flight.departure_airport)?.id,
+        'departure_time_utc': new_flight.departure_time,
+        'destination_airport_id': airports.find(airport => airport.title === new_flight.destination_airport)?.id,
+        'arrival_time_utc': new_flight.arrival_time,
+        'ticket_price_dollars': new_flight.price,
+        'seats': new_flight.seats,
+      })
+    console.log(body);
+    let res = await fetch(($API_URL as string) + '/flights', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${$access_token as string}`,
+      },
+      body
+    });
+    if (res.ok) {
+      window.location.reload();
+    }
+  };
 </script>
 
 <div id="home">
   {#await flights}
     <Loading />
-  {:then res_flights} 
+  {:then res_flights}
     <h1 style="text-align: center; margin-top: 1rem; margin-bottom: 1rem">All available flights</h1>
     <Table>
       <TableHead>
@@ -139,58 +175,56 @@
               {#if admin}
                 <Button on:click={() => delete_flight(flight.id)} style="width: 100%;" kind="danger" icon={Erase}>Delete Flight</Button>
               {:else}
-                <Button on:click={() => show_booking_modal[flight.id] = true} style="width: 100%;" kind="primary" icon={ShoppingCart}>Book Flight</Button>
+                <Button on:click={() => (show_booking_modal[flight.id] = true)} style="width: 100%;" kind="primary" icon={ShoppingCart}>Book Flight</Button>
               {/if}
             </TableCell>
           </TableRow>
           <Modal
             on:close={() => (show_booking_modal[flight.id] = false)}
-            on:submit={() => (book_flight(String(flight.id)))}
+            on:submit={() => book_flight(String(flight.id))}
             open={show_booking_modal[flight.id]}
             modalHeading="FLIGHT BOOKING"
             primaryButtonText="Book Flight"
-            >
-            This is the booking screen. 
-            In a real application, there would be a link to our payment service provider, where the user enters his payment information.
-            Only after successful payment processing, the ticket would be saved as purchased.<br><br>
-            <h5>{flight.departure_airport} → {flight.destination_airport}</h5> on {new Date(flight.departure_time).toDateString()}
+          >
+            This is the booking screen. In a real application, there would be a link to our payment service provider, where the user enters his payment information. Only after successful payment
+            processing, the ticket would be saved as purchased.<br /><br />
+            <h5>{flight.departure_airport} → {flight.destination_airport}</h5>
+            on {new Date(flight.departure_time).toDateString()}
           </Modal>
         {/each}
         {#if admin}
           <TableRow>
             <TableCell>
               <Select bind:selected={new_flight.departure_airport} hideLabel>
-                <SelectItem text="JFK - New York Airport" value="JFK - New York Airport"/>
-                <SelectItem text="MUC - Munich Airport" value="MUC - Munich Airport"/>
-                <SelectItem text="FRA - Frankfurt Airport" value="FRA - Frankfurt Airport"/>
-                <SelectItem text="LHR - Heathrow Airport" value="LHR - Heathrow Airport"/>
-                <SelectItem text="LCY - London City Airport" value="LCY - London City Airport"/>
-                <SelectItem text="BRU - Brussels Airport" value="BRU - Brussels Airport"/>
+                <SelectItem text="JFK - New York Airport" value="JFK - New York Airport" />
+                <SelectItem text="MUC - Munich Airport" value="MUC - Munich Airport" />
+                <SelectItem text="FRA - Frankfurt Airport" value="FRA - Frankfurt Airport" />
+                <SelectItem text="LHR - Heathrow Airport" value="LHR - Heathrow Airport" />
+                <SelectItem text="LCY - London City Airport" value="LCY - London City Airport" />
+                <SelectItem text="BRU - Brussels Airport" value="BRU - Brussels Airport" />
               </Select>
             </TableCell>
             <TableCell>
-              <DatePicker bind:selected={new_flight.departure_time} />
+              <TextInput bind:value={new_flight.departure_time} placeholder="e.g. 2021-12-16T14:21:27"/>
             </TableCell>
             <TableCell>
               <Select bind:selected={new_flight.destination_airport} hideLabel>
-                <SelectItem text="JFK - New York Airport" value="JFK - New York Airport"/>
-                <SelectItem text="MUC - Munich Airport" value="MUC - Munich Airport"/>
-                <SelectItem text="FRA - Frankfurt Airport" value="FRA - Frankfurt Airport"/>
-                <SelectItem text="LHR - Heathrow Airport" value="LHR - Heathrow Airport"/>
-                <SelectItem text="LCY - London City Airport" value="LCY - London City Airport"/>
-                <SelectItem text="BRU - Brussels Airport" value="BRU - Brussels Airport"/>
+                <SelectItem text="JFK - New York Airport" value="JFK - New York Airport" />
+                <SelectItem text="MUC - Munich Airport" value="MUC - Munich Airport" />
+                <SelectItem text="FRA - Frankfurt Airport" value="FRA - Frankfurt Airport" />
+                <SelectItem text="LHR - Heathrow Airport" value="LHR - Heathrow Airport" />
+                <SelectItem text="LCY - London City Airport" value="LCY - London City Airport" />
+                <SelectItem text="BRU - Brussels Airport" value="BRU - Brussels Airport" />
               </Select>
             </TableCell>
             <TableCell>
-              <Select>
-                <SelectItem text="Test"/>
-              </Select>
+              <TextInput bind:value={new_flight.arrival_time} placeholder="e.g. 2021-12-16T18:13:12"/>
             </TableCell>
             <TableCell>
-              <NumberInput bind:value={new_flight.price} min={0} hideSteppers/>
+              <NumberInput bind:value={new_flight.price} min={0} hideSteppers style="width: 25px;" />
             </TableCell>
             <TableCell>
-              <NumberInput bind:value={new_flight.seats} min={0} hideSteppers/>
+              <NumberInput bind:value={new_flight.seats} min={0} hideSteppers style="width: 25px;" />
             </TableCell>
             <TableCell style="padding: 0 !important;">
               <Button on:click={() => create_flight()} style="width: 100%;" kind="primary" icon={AddAlt}>Create Flight</Button>
@@ -199,15 +233,8 @@
         {/if}
       </TableBody>
     </Table>
-    {JSON.stringify(new_flight)}
     {#if booking_fail}
-      <ToastNotification
-        style="position: absolute; bottom: 0; right: 0; z-index: 9001;"
-        kind="error"
-        title="Flight booking failed!"
-        subtitle="There are no more seats available."
-        lowContrast
-      />
+      <ToastNotification style="position: absolute; bottom: 0; right: 0; z-index: 9001;" kind="error" title="Flight booking failed!" subtitle="There are no more seats available." lowContrast />
     {:else if booking_success}
       <ToastNotification
         style="position: absolute; bottom: 0; right: 0; z-index: 9001;"
