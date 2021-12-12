@@ -9,3 +9,12 @@ body {
 #bx--modal-body--verification-code-modal {
     margin-bottom: 0;
 }
+
+.action-link {
+  padding-top: 12px !important;
+  position: relative !important;
+  right: 0 !important;
+}
+.bx--header__name {
+  padding: 0 1rem 0 1rem !important;
+}

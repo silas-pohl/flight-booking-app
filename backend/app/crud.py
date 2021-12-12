@@ -39,6 +39,15 @@ def create_user(db: Session, email: str, password: str, first_name: str, last_na
     db.refresh(db_user)
     return db_user
 
+def create_admin_user(db: Session, email: str, password: str, first_name: str, last_name: str):
+    psw_hash = auth.get_password_hash(password)
+    db_user = models.User(email=email, hashed_password=psw_hash, first_name=first_name,
+                          last_name=last_name, is_admin=True)
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+
 # ----------------------------------------------------------------------------------------------------------------------
 # Refresh tokens
 
@@ -141,7 +150,8 @@ def delete_user_ticket(db: Session, user_id: uuid.UUID, ticket_id: uuid.UUID):
     db.query(models.Ticket).filter(models.Ticket.id == ticket_id,
                                    models.Ticket.owner_id == user_id).delete()
     db.commit()
-    return schemas.TicketID(ticket_id)
+    print(ticket_id)
+    return {ticket_id}
 
 # ----------------------------------------------------------------------------------------------------------------------
 # VERIFICATION RECORDS
