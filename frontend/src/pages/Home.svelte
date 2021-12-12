@@ -13,7 +13,7 @@
   import Erase from 'carbon-icons-svelte/lib/Erase32';
   import AddAlt from 'carbon-icons-svelte/lib/AddAlt32';
 
-  let flights: Promise<DisplayFlight[]> = new Promise(() => {});
+  let flights: Promise<DisplayFlight[]> = new Promise(() => {}); //eslint-disable-line @typescript-eslint/no-empty-function
   let airports: Airport[] = [];
   let show_booking_modal: { [key: string]: boolean } = {};
   let booking_fail = false;
@@ -29,8 +29,10 @@
   };
 
   onMount(() => {
+    //eslint-disable-next-line @typescript-eslint/no-misused-promises
     setTimeout(async () => {
-      admin = JSON.parse(window.atob($access_token.split('.')[1])).admin;
+      let decoded: { admin: boolean } = JSON.parse(window.atob(String($access_token).split('.')[1])) as { admin: boolean };
+      admin = decoded.admin;
       flights = get_flights();
       airports = await get_airports();
       let res_flights = await flights;
@@ -123,13 +125,13 @@
 
   const create_flight = async () => {
     let body = JSON.stringify({
-        'departure_airport_id': airports.find(airport => airport.title === new_flight.departure_airport)?.id,
-        'departure_time_utc': new_flight.departure_time,
-        'destination_airport_id': airports.find(airport => airport.title === new_flight.destination_airport)?.id,
-        'arrival_time_utc': new_flight.arrival_time,
-        'ticket_price_dollars': new_flight.price,
-        'seats': new_flight.seats,
-      })
+      departure_airport_id: airports.find(airport => airport.title === new_flight.departure_airport)?.id,
+      departure_time_utc: new_flight.departure_time,
+      destination_airport_id: airports.find(airport => airport.title === new_flight.destination_airport)?.id,
+      arrival_time_utc: new_flight.arrival_time,
+      ticket_price_dollars: new_flight.price,
+      seats: new_flight.seats,
+    });
     console.log(body);
     let res = await fetch(($API_URL as string) + '/flights', {
       method: 'POST',
@@ -137,7 +139,7 @@
         'Content-Type': 'application/json',
         Authorization: `Bearer ${$access_token as string}`,
       },
-      body
+      body,
     });
     if (res.ok) {
       window.location.reload();
@@ -166,30 +168,30 @@
         {#each res_flights as flight}
           <TableRow>
             <TableCell>{flight.departure_airport}</TableCell>
-            <TableCell>{new Date(flight.departure_time).toUTCString()}</TableCell>
+            <TableCell>{new Date(String(flight.departure_time)).toUTCString()}</TableCell>
             <TableCell>{flight.destination_airport}</TableCell>
-            <TableCell>{new Date(flight.arrival_time).toUTCString()}</TableCell>
+            <TableCell>{new Date(String(flight.arrival_time)).toUTCString()}</TableCell>
             <TableCell>{flight.price}</TableCell>
             <TableCell>{flight.seats}</TableCell>
             <TableCell style="padding: 0 !important;">
               {#if admin}
-                <Button on:click={() => delete_flight(flight.id)} style="width: 100%;" kind="danger" icon={Erase}>Delete Flight</Button>
+                <Button on:click={() => delete_flight(String(flight.id))} style="width: 100%;" kind="danger" icon={Erase}>Delete Flight</Button>
               {:else}
-                <Button on:click={() => (show_booking_modal[flight.id] = true)} style="width: 100%;" kind="primary" icon={ShoppingCart}>Book Flight</Button>
+                <Button on:click={() => (show_booking_modal[String(flight.id)] = true)} style="width: 100%;" kind="primary" icon={ShoppingCart}>Book Flight</Button>
               {/if}
             </TableCell>
           </TableRow>
           <Modal
-            on:close={() => (show_booking_modal[flight.id] = false)}
+            on:close={() => (show_booking_modal[String(flight.id)] = false)}
             on:submit={() => book_flight(String(flight.id))}
-            open={show_booking_modal[flight.id]}
+            open={show_booking_modal[String(flight.id)]}
             modalHeading="FLIGHT BOOKING"
             primaryButtonText="Book Flight"
           >
             This is the booking screen. In a real application, there would be a link to our payment service provider, where the user enters his payment information. Only after successful payment
             processing, the ticket would be saved as purchased.<br /><br />
             <h5>{flight.departure_airport} → {flight.destination_airport}</h5>
-            on {new Date(flight.departure_time).toDateString()}
+            on {new Date(String(flight.departure_time)).toDateString()}
           </Modal>
         {/each}
         {#if admin}
@@ -205,7 +207,7 @@
               </Select>
             </TableCell>
             <TableCell>
-              <TextInput bind:value={new_flight.departure_time} placeholder="e.g. 2021-12-16T14:21:27"/>
+              <TextInput bind:value={new_flight.departure_time} placeholder="e.g. 2021-12-16T14:21:27" />
             </TableCell>
             <TableCell>
               <Select bind:selected={new_flight.destination_airport} hideLabel>
@@ -218,7 +220,7 @@
               </Select>
             </TableCell>
             <TableCell>
-              <TextInput bind:value={new_flight.arrival_time} placeholder="e.g. 2021-12-16T18:13:12"/>
+              <TextInput bind:value={new_flight.arrival_time} placeholder="e.g. 2021-12-16T18:13:12" />
             </TableCell>
             <TableCell>
               <NumberInput bind:value={new_flight.price} min={0} hideSteppers style="width: 25px;" />

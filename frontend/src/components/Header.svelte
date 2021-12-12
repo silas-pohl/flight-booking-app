@@ -6,11 +6,12 @@
   import { API_URL, access_token } from '../store';
   import { onMount } from 'svelte';
 
-  let admin: false;
+  let admin = false;
 
   onMount(() => {
-    setTimeout(async () => {
-      admin = JSON.parse(window.atob($access_token.split('.')[1])).admin;
+    setTimeout(() => {
+      let decoded: { admin: boolean } = JSON.parse(window.atob(String($access_token).split('.')[1])) as { admin: boolean };
+      admin = decoded.admin;
     }, 300);
   });
 

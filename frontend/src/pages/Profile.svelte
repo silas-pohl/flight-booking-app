@@ -54,15 +54,17 @@
   import { ToastNotification, Modal, Loading, Table, TableBody, TableCell, TableHead, TableRow, Button } from 'carbon-components-svelte';
   import CloseOutline from 'carbon-icons-svelte/lib/CloseOutline32';
 
-  let user: Promise<User> = new Promise(() => {});
-  let tickets: Promise<DisplayTicket[]> = new Promise(() => {});
+  let user: Promise<User> = new Promise(() => {}); //eslint-disable-line @typescript-eslint/no-empty-function
+  let tickets: Promise<DisplayTicket[]> = new Promise(() => {}); //eslint-disable-line @typescript-eslint/no-empty-function
   let show_cancellation_modal: { [key: string]: boolean } = {};
-  let cancellation_fail: boolean = false;
+  let cancellation_fail = false;
   let admin = false;
 
   onMount(() => {
+    //eslint-disable-next-line @typescript-eslint/no-misused-promises
     setTimeout(async () => {
-      admin = JSON.parse(window.atob($access_token.split('.')[1])).admin;
+      let decoded: { admin: boolean } = JSON.parse(window.atob(String($access_token).split('.')[1])) as { admin: boolean };
+      admin = decoded.admin;
       user = get_user_data();
       tickets = get_user_tickets();
       let res_tickets = await tickets;
@@ -156,7 +158,7 @@
       <Loading />
     {:then res_tickets}
       <div id="avatar">
-        <img alt="Avatar" src="https://avatars.dicebear.com/api/avataaars/{res_user.first_name[0]}{res_user.last_name[0]}{res_user.email[0]}.svg" />
+        <img alt="Avatar" src="https://avatars.dicebear.com/api/avataaars/{String(res_user.first_name)[0]}{String(res_user.last_name)[0]}{String(res_user.email)[0]}.svg" />
       </div>
       <div id="name">{res_user.first_name} {res_user.last_name} {admin ? '(Admin)' : ''}</div>
       <div id="email">{res_user.email}</div>
@@ -178,18 +180,18 @@
               {#each res_tickets as ticket}
                 <TableRow>
                   <TableCell>{ticket.departure_airport}</TableCell>
-                  <TableCell>{new Date(ticket.departure_time).toUTCString()}</TableCell>
+                  <TableCell>{new Date(String(ticket.departure_time)).toUTCString()}</TableCell>
                   <TableCell>{ticket.destination_airport}</TableCell>
-                  <TableCell>{new Date(ticket.arrival_time).toUTCString()}</TableCell>
-                  <TableCell>{new Date(ticket.created).toUTCString()}</TableCell>
+                  <TableCell>{new Date(String(ticket.arrival_time)).toUTCString()}</TableCell>
+                  <TableCell>{new Date(String(ticket.created)).toUTCString()}</TableCell>
                   <TableCell style="padding: 0 !important;"
-                    ><Button on:click={() => (show_cancellation_modal[ticket.id] = true)} style="width: 100%;" kind="danger" icon={CloseOutline}>Cancel</Button></TableCell
+                    ><Button on:click={() => (show_cancellation_modal[String(ticket.id)] = true)} style="width: 100%;" kind="danger" icon={CloseOutline}>Cancel</Button></TableCell
                   >
                 </TableRow>
                 <Modal
-                  on:close={() => (show_cancellation_modal[ticket.id] = false)}
+                  on:close={() => (show_cancellation_modal[String(ticket.id)] = false)}
                   on:submit={() => cancel_flight(String(ticket.id))}
-                  open={show_cancellation_modal[ticket.id]}
+                  open={show_cancellation_modal[String(ticket.id)]}
                   danger
                   modalHeading="FLIGHT CANCELLATION"
                   primaryButtonText="Cancel Flight"
@@ -198,7 +200,7 @@
                   Are you sure you want to cancel this flight? This action cannot be undone.<br />
                   The ticket price paid will be refunded as soon as possible.<br /><br />
                   <h5>{ticket.departure_airport} → {ticket.destination_airport}</h5>
-                  on {new Date(ticket.departure_time).toDateString()}
+                  on {new Date(String(ticket.departure_time)).toDateString()}
                 </Modal>
               {/each}
             </TableBody>
