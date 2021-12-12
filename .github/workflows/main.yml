@@ -27,6 +27,12 @@ jobs:
           HD_POSTGRES_PASSWORD: ${{secrets.POSTGRES_PASSWORD}}
           HD_POSTGRES_HOST: ${{secrets.POSTGRES_HOST}}
           HD_POSTGRES_PORT: ${{secrets.POSTGRES_PORT}}
+          HD_ACCESS_TOKEN_SECRET: ${{secrets.ACCESS_TOKEN_SECRET}}
+          HD_REFRESH_TOKEN_SECRET: ${{secrets.REFRESH_TOKEN_SECRET}}
+          HD_ALGORITHM: ${{secrets.ALGORITHM}}
+          HD_ACCESS_TOKEN_EXPIRE_MINUTES: ${{secrets.ACCESS_TOKEN_EXPIRE_MINUTES}}
+          HD_EMAIL_ADDRESS: ${{secrets.EMAIL_ADDRESS}}
+          HD_EMAIL_PASSWORD: ${{secrets.EMAIL_PASSWORD}}
 
       - name: Build and deploy frontend
         uses: akhileshns/heroku-deploy@v3.12.12
@@ -36,3 +42,5 @@ jobs:
           heroku_email: "mail@silaspohl.de"
           appdir: "frontend"
           usedocker: true
+        env:
+          HD_API_URL: "https://backend-flight-booking-app.herokuapp.com/"
