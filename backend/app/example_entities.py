@@ -17,7 +17,8 @@ def create_example_entities(db: Session):
         raise HTTPException(
             status_code=409, detail="Example user already exists, aborting example setup")
 
-    crud.create_admin_user(db=db, email="payments.flight.booking@gmail.com", password="TestT3stT€st", first_name="Flight", last_name="Booking")
+    crud.create_admin_user(db=db, email="test@test.test",
+                           password="TestT3stT€st", first_name="Flight", last_name="Booking")
 
     airport_1 = create_airport(db=db, title="JFK - New York Airport")
     airport_2 = create_airport(db=db, title="MUC - Munich Airport")
