@@ -28,9 +28,6 @@ def test_refresh_token(mock_crud_delete_refresh_token, mock_auth_create_refresh_
     assert response_refresh_token.json() == {"access_token": access_token,
                                              "token_type": "bearer",
                                              "expires_in": auth.ACCESS_TOKEN_EXPIRE_MINUTES*60*1000}
-    assert response_refresh_token.cookies.get_dict(
-    ) == {"refresh_token": refresh_token}
-
     te.teardown()
 
 
