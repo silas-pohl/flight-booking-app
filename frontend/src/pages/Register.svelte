@@ -3,6 +3,7 @@
   // Imports
   import { Form, TextInput, Button, InlineNotification, Modal } from 'carbon-components-svelte';
   import ArrowRight from 'carbon-icons-svelte/lib/ArrowRight32';
+  import { API_URL } from '../store';
 
   //-------------------------------------------------------------------------------------------------
   // Variables and Constants
@@ -126,7 +127,7 @@
   //-------------------------------------------------------------------------------------------------
   // Endpoint calls
   const get_verification_code = (): void => {
-    fetch('http://localhost:80/verificationcode', {
+    fetch(($API_URL as string) + '/verificationcode', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, action: 'register' }),
@@ -146,7 +147,7 @@
       });
   };
   const register = (): void => {
-    fetch('http://localhost:80/register', {
+    fetch(($API_URL as string) + '/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ first_name, last_name, email, password, verification_code }),
