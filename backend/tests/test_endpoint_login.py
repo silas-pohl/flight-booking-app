@@ -28,8 +28,7 @@ def test_login_valid_login(mock_auth_authenticate_user, mock_auth_create_refresh
     assert response_login.status_code == 200
     assert response_login.json() == {
         "access_token": access_token, "token_type": "bearer", "expires_in": auth.ACCESS_TOKEN_EXPIRE_MINUTES*60*1000}
-    assert response_login.cookies.get_dict(
-    ) == {"refresh_token": refresh_token}
+    assert response_login.cookies.get_dict() == {"refresh_token": refresh_token}
 
     te.teardown()
 
