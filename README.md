@@ -1,7 +1,7 @@
 ### Hey 👋
 The **Flight Booking App** is a web application that simulates the process of booking a flight, taking security into account already in the design of the application.
 
-The application uses [Svelte](https://svelte.dev/) in the frontend, [FastAPI](https://fastapi.tiangolo.com/) in the backend and [PostgreSQL](https://www.postgresql.org/) as database. Any changes to the `main` branch are automatically deployed to [Heroku](https://www.heroku.com) via a Github actions workflow, so both backend and frontend are accessible via the following links: 
+The application uses [Svelte](https://svelte.dev/) in the frontend, [FastAPI](https://fastapi.tiangolo.com/) in the backend and [PostgreSQL](https://www.postgresql.org/) as database. Any changes to the `main` branch are automatically checked with CodeQL and deployed to [Heroku](https://www.heroku.com) via a Github actions workflows, so both backend and frontend are accessible via the following links: 
 
 🔴 https://frontend-flight-booking-app.herokuapp.com/
 
