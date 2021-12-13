@@ -136,7 +136,7 @@ async def login(form_data: schemas.TokenLogin, response: Response, db: Session =
 
     response.set_cookie(key="refresh_token",
                         value=refresh_token,
-                        domain="frontend-flight-booking.herokuapp.com",
+                        domain="backend-flight-booking.herokuapp.com",
                         httponly=True,
                         samesite="none",
                         secure=True)
@@ -172,7 +172,7 @@ async def refreshtoken(response: Response, refresh_token: str = Cookie(None), db
     print("LOG: Info: Successful token refresh")
     response.set_cookie(key="refresh_token",
                         value=new_refresh_token,
-                        domain="frontend-flight-booking.herokuapp.com",
+                        domain="backend-flight-booking.herokuapp.com",
                         httponly=True,
                         samesite="none",
                         secure=True)
