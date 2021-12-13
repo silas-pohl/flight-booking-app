@@ -27,7 +27,6 @@ app.add_middleware(
     ],
     allow_credentials=True,
     allow_methods=["*"],
-    
 )
 
 # Dependency
@@ -47,7 +46,7 @@ def verificationcode(data: schemas.EmailVerification, db: Session = Depends(get_
 
     # Validate request data
     regex = re.compile(
-        r"([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+")
+        r"([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)")
     if not (re.fullmatch(regex, data.email)) or (data.action not in ['register', 'login', 'reset']):
         raise HTTPException(status_code=422, detail="Invalid request data")
 
@@ -81,7 +80,7 @@ def register(data: schemas.RegisterData, db: Session = Depends(get_db)):
 
     # Validate request data
     mail_regex = re.compile(
-        r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+')
+        r"([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)")
     pw_regex = re.compile(r'(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[\W]).{12,}')
     if (
         len(data.first_name) < 2 or
