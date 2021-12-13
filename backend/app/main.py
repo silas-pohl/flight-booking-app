@@ -129,7 +129,9 @@ async def login(form_data: schemas.TokenLogin, response: Response, db: Session =
     response.set_cookie(key="refresh_token",
                         value=refresh_token,
                         domain="backend-flight-booking-app.herokuapp.com", 
-                        httponly=True)
+                        httponly=True,
+                        samesite="none",
+                        secure=True)
 
     return {"access_token": access_token,
             "token_type": "bearer",
@@ -161,7 +163,9 @@ async def refreshtoken(response: Response, refresh_token: str = Cookie(None), db
     response.set_cookie(key="refresh_token",
                         value=new_refresh_token, 
                         domain="backend-flight-booking-app.herokuapp.com",
-                        httponly=True)
+                        httponly=True,
+                        samesite="none",
+                        secure=True)
 
     crud.delete_refresh_token(db, refresh_token=refresh_token)
 
