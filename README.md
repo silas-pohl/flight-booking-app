@@ -9,22 +9,41 @@ The application uses [Svelte](https://svelte.dev/) in the frontend, [FastAPI](ht
 
 ## 🛠️ Development
 
-Clone repository
+1. Clone repository
 ```
 git clone https://github.com/silas-pohl/flight-booking-app.git
 
 cd flight-booking-app
 ```
-Create `/backend/.env` with the following content (`USER`, `PASSWORD` and `DATABASE` can be changed):
+2. Create `/backend/.env` with the following content (values in curly brackets must be replaced accordingly):
 ```
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_DATABASE=postgres
+POSTGRES_USER={postgres_user}
+POSTGRES_PASSWORD={postgres_password}
+POSTGRES_DATABASE={postgres_database}
 POSTGRES_HOST=database
 POSTGRES_PORT=5432
+
+ACCESS_TOKEN_SECRET={access_token_secret}
+REFRESH_TOKEN_SECRET={refresh_token_secret}
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=0.25
+
+EMAIL_ADDRESS={gmail_address}
+EMAIL_PASSWORD={gmail_address_password}
 ```
-Start frontend, backend and local database via `docker-compose up`
+
+3. Change `API_URL` in `/frontend/src/store.ts` to `'http://localhost:80'`
+```
+export const API_URL: Readable<string> = readable('http://localhost:80');
+```
+
+4. Change **both** Cookie-Domains in `/backend/app/main.py` to `'localhost'`
+```
+response.set_cookie(key="refresh_token", value=refresh_token, domain="localhost",  httponly=True, samesite="none", secure=True)
+```
+
+5. Start frontend, backend and local database via `docker-compose up`
 ```
 docker-compose up
 ```
-Access frontend on http://localhost:5000/ and backend on http://localhost:80/
+6. Access frontend on http://localhost:5000/ and backend on http://localhost:80/
