@@ -1,5 +1,5 @@
 import re
-from random import SystemRandom
+from random import SystemRandom, sample
 from datetime import timedelta, datetime
 from sqlalchemy.sql.sqltypes import DateTime
 from fastapi import Depends, FastAPI, HTTPException, status, Response, Cookie
@@ -21,9 +21,13 @@ app.add_middleware(
       "http://localhost:5000",
       "https://frontend-flight-booking-app.herokuapp.com"
     ],
+    allow_headers=[
+      "Content-Type",
+      "Authorization"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
+    
 )
 
 # Dependency
@@ -123,7 +127,10 @@ async def login(form_data: schemas.TokenLogin, response: Response, db: Session =
     )
 
     response.set_cookie(key="refresh_token",
-                        value=refresh_token, httponly=True)
+                        value=refresh_token, 
+                        httponly=True,
+                        samesite='none',
+                        secure=True)
 
     return {"access_token": access_token,
             "token_type": "bearer",
