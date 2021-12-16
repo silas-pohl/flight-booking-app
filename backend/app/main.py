@@ -9,7 +9,6 @@ from sqlalchemy.orm import Session
 from . import crud, models, schemas, auth, mail
 import uuid
 from .database import SessionLocal, engine
-from . import example_entities
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -293,13 +292,6 @@ async def cancel_flight(data: schemas.TicketID, current_user: schemas.User = Dep
             f"LOG: Error: Flight {user_ticket.flight_id} cannot be cancelled for user {current_user.email}: Less than 48h until takeoff")
         raise HTTPException(
             status_code=409, detail="Cancellation is only available until 48h before takeoff")
-
-
-# Experimental
-
-@app.post("/exampleentities")
-async def create_example_entities(db: Session = Depends(get_db)):
-    return example_entities.create_example_entities(db=db)
 
 # Admin Routes
 
